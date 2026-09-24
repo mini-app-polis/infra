@@ -70,9 +70,9 @@ repository variables from `terraform output cogs` in the cog's repository.
 
 1. Commit to `dev` and open a pull request to `main`. CI plans it with the
    read-only `infra-plan` role; the plan is the job summary.
-2. Merge. CI plans again on `main`, then the apply job waits in the
-   `production` environment for approval. Approve, and it applies with
-   `infra-apply`.
+2. Merge. CI plans again on `main` and applies with `infra-apply`, in the
+   `production` environment. The merge is the approval: read the PR's plan
+   before merging.
 
 Nothing applies from `dev`, and `main` accepts changes only by pull request,
 so `main` is always what is applied. Roles: `ci.tf`. Workflow:
