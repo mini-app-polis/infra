@@ -1,0 +1,20 @@
+.terraform/
+
+# State lives in S3 (backend.tf). A local copy here means something went
+# wrong — never commit one.
+*.tfstate
+*.tfstate.*
+crash.log
+
+terraform.tfvars
+*.auto.tfvars
+
+# A saved plan carries the values it was made with.
+tfplan
+*.tfplan
+
+*.zip
+
+# NOT ignored: .terraform.lock.hcl is committed. Lock it for both platforms
+# that run Terraform:
+#   terraform providers lock -platform=darwin_arm64 -platform=linux_amd64
