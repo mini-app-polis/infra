@@ -57,6 +57,7 @@ data "aws_iam_policy_document" "infra_plan_assume" {
 
 resource "aws_iam_role" "infra_plan" {
   name               = "infra-plan"
+  description        = "mini-app-polis/infra CI: plans on pull requests and pushes to main. Read-only."
   assume_role_policy = data.aws_iam_policy_document.infra_plan_assume.json
 }
 
@@ -119,6 +120,7 @@ data "aws_iam_policy_document" "infra_apply_assume" {
 
 resource "aws_iam_role" "infra_apply" {
   name               = "infra-apply"
+  description        = "mini-app-polis/infra CI: applies merges to main, from the production environment after approval."
   assume_role_policy = data.aws_iam_policy_document.infra_apply_assume.json
 }
 
