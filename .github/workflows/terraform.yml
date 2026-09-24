@@ -193,6 +193,33 @@ jobs:
           fi
           terraform apply -no-color tfplan
 
+  # SEC-001/002/004: secret scanning (gating) and static analysis
+  # (advisory — semgrep's auto config includes Terraform rules), from the
+  # fleet's shared workflow. Its dependency audits are for Python and
+  # TypeScript and skip here; Dependabot keeps the providers and actions
+  # current (SEC-007).
+  security:
+    uses: mini-app-polis/.github/.github/workflows/security.yml@v3
+    with:
+      language: terraform
+    permissions:
+      contents: read
+
+  # CD-031: ask for this repository's own evaluation once main has been
+  # applied — or had nothing to apply, since a change to the workflow or
+  # the configuration still changes what the evaluator grades. Not after a
+  # failed apply: that needs fixing first, and a red apply job already
+  # says so.
+  evaluate:
+    needs: [plan, apply]
+    if: >-
+      always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+      && needs.plan.result == 'success'
+      && (needs.apply.result == 'success' || needs.apply.result == 'skipped')
+    uses: mini-app-polis/.github/.github/workflows/evaluate.yml@v3
+    secrets:
+      api-key: ${{ secrets.CI_VALIDATOR_API_KEY }}
+
   # After a merge, main is dev plus a merge commit. Move dev up to it so the
   # next pull request starts from what main holds. A plain push: if dev has
   # gained commits main does not have, it is not a fast-forward, the push

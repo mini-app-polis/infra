@@ -1,0 +1,30 @@
+# Updates for the two things this repository depends on: the actions its
+# workflow runs, and the Terraform providers the root and its module pin.
+#
+# Provider majors are ignored: a major AWS provider release changes resource
+# behaviour, and moving to one is a planned change with its own pull request,
+# not a weekly bump. Minor and patch releases arrive here and are planned
+# like any other change — the pull request's plan shows what they would do.
+
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: "dev"
+    commit-message:
+      prefix: "chore(deps)"
+
+  - package-ecosystem: "terraform"
+    directories:
+      - "/"
+      - "/modules/cog-worker"
+    schedule:
+      interval: "weekly"
+    target-branch: "dev"
+    commit-message:
+      prefix: "chore(deps)"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
