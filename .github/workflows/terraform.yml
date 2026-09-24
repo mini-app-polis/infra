@@ -1,0 +1,134 @@
+# Plan on every pull request; plan and apply on every merge to main.
+#
+#   pull request → plan      infra-plan (read-only), -lock=false; the plan
+#                            is the job summary
+#   push to main → plan      the same, so the approver sees exactly what
+#                            main would apply
+#                → apply     infra-apply, in the `production` environment:
+#                            GitHub holds the job until its reviewer
+#                            approves, then plans again and applies
+#
+# Nothing applies from dev, and main accepts changes only by pull request,
+# so main is what is applied. See ci.tf for the roles.
+#
+# Plans no longer carry secrets — none pass through Terraform — and the one
+# sensitive value read (the alert address) prints as (sensitive). No plan
+# file is uploaded as an artifact: artifacts on a public repository are
+# downloadable, and a saved plan holds sensitive values in the clear.
+
+name: terraform
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  TF_IN_AUTOMATION: "1"
+  TF_INPUT: "0"
+  AWS_REGION: us-east-1
+
+# One run at a time against the one state. Never cancel an apply midway.
+concurrency:
+  group: terraform
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          # Match the workstation, so fmt agrees and the state's version
+          # does not move under it.
+          terraform_version: "1.16.2"
+          terraform_wrapper: false
+
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: fmt
+        run: terraform fmt -check -recursive -diff
+
+      - name: init
+        run: terraform init
+
+      - name: validate
+        run: terraform validate
+
+      # -lock=false: a plan changes nothing, and the plan role cannot write
+      # the lock file. -detailed-exitcode: 0 no changes, 2 changes, 1 error.
+      - name: plan
+        id: plan
+        run: |
+          set +e
+          terraform plan -lock=false -no-color -detailed-exitcode -out tfplan > plan.txt
+          code=$?
+          set -e
+          cat plan.txt
+          if [ "$code" -eq 1 ]; then exit 1; fi
+          echo "changes=$([ "$code" -eq 2 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: summary
+        if: always()
+        run: |
+          {
+            echo "## terraform plan"
+            echo
+            grep -E '^(Plan:|No changes\.|Error)' plan.txt || true
+            echo
+            echo '<details><summary>Full plan</summary>'
+            echo
+            echo '```'
+            head -c 60000 plan.txt
+            echo '```'
+            echo '</details>'
+          } >> "$GITHUB_STEP_SUMMARY"
+    outputs:
+      changes: ${{ steps.plan.outputs.changes }}
+
+  apply:
+    needs: plan
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.plan.outputs.changes == 'true'
+    runs-on: ubuntu-latest
+    # Required reviewer and main-only deployment are set on the environment
+    # in the repository's settings; the apply role trusts this environment
+    # and nothing else.
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: "1.16.2"
+          terraform_wrapper: false
+
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_APPLY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: init
+        run: terraform init
+
+      # Planned again under the lock rather than applying the plan job's
+      # file: the file never leaves that job (see the header). If anything
+      # changed between approval and now, this plan shows it in the log.
+      - name: apply
+        run: |
+          terraform plan -no-color -out tfplan
+          terraform apply -no-color tfplan

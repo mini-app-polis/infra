@@ -26,3 +26,11 @@ output "producer_user_name" {
   description = "Mint its access key by hand, straight into Doppler."
   value       = aws_iam_user.producer.name
 }
+
+output "ci_roles" {
+  description = "Repository variables for this repo's workflow: AWS_PLAN_ROLE_ARN and AWS_APPLY_ROLE_ARN."
+  value = {
+    AWS_PLAN_ROLE_ARN  = aws_iam_role.infra_plan.arn
+    AWS_APPLY_ROLE_ARN = aws_iam_role.infra_apply.arn
+  }
+}
