@@ -21,6 +21,8 @@ name: terraform
 on:
   pull_request:
     branches: [main]
+    # labeled/unlabeled: adding or removing allow-destroy re-runs the check.
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
     branches: [main]
 
@@ -38,6 +40,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
+      pull-requests: read
     steps:
       - uses: actions/checkout@v7
 
@@ -75,6 +78,43 @@ jobs:
           if [ "$code" -eq 1 ]; then exit 1; fi
           echo "changes=$([ "$code" -eq 2 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
+      # A plan that destroys or replaces anything does not merge unless the
+      # pull request is labelled allow-destroy. Those are the changes that
+      # cause outages — a queue and its messages, a worker reset to the
+      # bootstrap placeholder, the producer user and the key the API
+      # enqueues with — so they take a deliberate decision, made on the pull
+      # request where the plan is read. Unlabelled, they are a mistake and
+      # this check stops them.
+      - name: refuse unlabelled destroys
+        if: steps.plan.outputs.changes == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ' ') }}
+        run: |
+          terraform show -json tfplan \
+            | jq -r '.resource_changes[] | select(.change.actions | index("delete")) | "\(.change.actions | join("/"))  \(.address)"' \
+            > destroys.txt
+          [ -s destroys.txt ] || exit 0
+
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            labels="$PR_LABELS"
+          else
+            labels=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" --jq '.[0].labels[].name' | tr '\n' ' ')
+          fi
+
+          if [[ " $labels " == *" allow-destroy "* ]]; then
+            echo "::warning::This plan destroys or replaces resources; allowed by the allow-destroy label."
+            heading="## ⚠️ Destroys or replacements — allowed by allow-destroy"
+            code=0
+          else
+            echo "::error::This plan destroys or replaces resources. If that is intended, label the pull request allow-destroy."
+            heading="## ⛔ Destroys or replacements — label the pull request allow-destroy to allow them"
+            code=1
+          fi
+          cat destroys.txt
+          { echo "$heading"; echo '```'; cat destroys.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit $code
+
       - name: summary
         if: always()
         run: |
@@ -111,6 +151,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
+      pull-requests: read
     steps:
       - uses: actions/checkout@v7
 
@@ -131,8 +172,25 @@ jobs:
       # file: the file never leaves that job (see the header). If anything
       # changed since that plan, this one shows it in the log.
       - name: apply
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           terraform plan -no-color -out tfplan
+          # The same guard, on the plan actually applied — main's can differ
+          # from the pull request's — against the label on the pull request
+          # this merge came from.
+          destroys=$(terraform show -json tfplan \
+            | jq -r '.resource_changes[] | select(.change.actions | index("delete")) | "\(.change.actions | join("/"))  \(.address)"')
+          if [ -n "$destroys" ]; then
+            labels=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" --jq '.[0].labels[].name' | tr '\n' ' ')
+            if [[ " $labels " != *" allow-destroy "* ]]; then
+              echo "::error::Refusing to apply unlabelled destroys or replacements:"
+              echo "$destroys"
+              exit 1
+            fi
+            echo "::warning::Applying destroys or replacements allowed by allow-destroy:"
+            echo "$destroys"
+          fi
           terraform apply -no-color tfplan
 
   # After a merge, main is dev plus a merge commit. Move dev up to it so the

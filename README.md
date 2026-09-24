@@ -78,6 +78,11 @@ Nothing applies from `dev`, and `main` accepts changes only by pull request,
 so `main` is always what is applied. Roles: `ci.tf`. Workflow:
 `.github/workflows/terraform.yml`.
 
+A plan that destroys or replaces anything fails the pull request's `plan`
+check, and the apply job refuses it too — those are the changes that cause
+outages. If it is intended, label the pull request **`allow-destroy`**: the
+check re-runs, lists exactly what goes, and passes; merging applies it.
+
 ### Break-glass
 
 The admin IAM user on the workstation still works, for when CI cannot — a
