@@ -33,11 +33,6 @@ env:
   TF_INPUT: "0"
   AWS_REGION: us-east-1
 
-# One run at a time against the one state. Never cancel an apply midway.
-concurrency:
-  group: terraform
-  cancel-in-progress: false
-
 jobs:
   plan:
     runs-on: ubuntu-latest
@@ -109,6 +104,13 @@ jobs:
     # in the repository's settings; the apply role trusts this environment
     # and nothing else.
     environment: production
+    # One apply at a time against the one state, and never cancelled
+    # midway. On this job only: plans take no lock and change nothing, so
+    # an apply waiting for approval (up to GitHub's 30 days) must not hold
+    # up the plan on the next pull request.
+    concurrency:
+      group: terraform-apply
+      cancel-in-progress: false
     permissions:
       contents: read
       id-token: write
