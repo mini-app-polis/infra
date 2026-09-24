@@ -1,0 +1,24 @@
+# infra / evaluator.yaml
+# Per-repo evaluation configuration — ecosystem-standards ADR-001, ADR-002,
+# ADR-010.
+
+type: infrastructure
+
+# The pipeline cogs' runtime rules are checked here, once: PIPE-017's
+# infrastructure half, PIPE-018, CD-010's dead-letter-queue alarm and
+# CD-024 read modules/cog-worker and the module blocks in cogs.tf; CD-027,
+# CD-028 and SEC-008 read the Terraform root.
+
+deferrals: []
+
+exemptions:
+  - rule: DOC-003
+    reason: >
+      No releases, so no changelog to keep. A change reaches AWS by a merged
+      pull request, and the pull request and its plan are the record of what
+      changed and why.
+  - rule: DOC-004
+    reason: >
+      Nothing here reads environment variables. Terraform's inputs are
+      variables with defaults in the repository, and the one value that is
+      not committed — the alert address — is read from Parameter Store.
