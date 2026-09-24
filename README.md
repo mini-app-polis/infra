@@ -45,7 +45,14 @@ terraform apply tfplan
 terraform providers lock -platform=darwin_arm64 -platform=linux_amd64
 ```
 
-Then delete the `import` block from `state.tf` and commit the lock file.
+The first apply used an `import` block in `state.tf` to adopt the bucket; it was removed afterwards. To bootstrap again from scratch, add it back:
+
+```hcl
+import {
+  to = aws_s3_bucket.tfstate
+  id = "mini-app-polis-tfstate-400200465748"
+}
+```
 
 ## Everyday use
 

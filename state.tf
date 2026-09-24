@@ -1,14 +1,8 @@
 # The bucket that holds this repository's own state.
 #
-# Created once with the AWS CLI (README.md, "Bootstrap") and adopted here by
-# the import block below, so Terraform owns its configuration from the first
-# apply and no local state file ever exists. The import block is a no-op
-# once applied; delete it after the first apply.
-
-import {
-  to = aws_s3_bucket.tfstate
-  id = "mini-app-polis-tfstate-400200465748"
-}
+# Created once with the AWS CLI and adopted by an import block on the first
+# apply (README.md, "Bootstrap"), so Terraform has owned its configuration
+# from the start and no local state file ever existed.
 
 resource "aws_s3_bucket" "tfstate" {
   bucket = "mini-app-polis-tfstate-400200465748"
