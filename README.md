@@ -3,10 +3,15 @@
 All of mini-app-polis's AWS infrastructure, in one Terraform root with one
 state:
 
-- the state bucket this repository's own state lives in (`state.tf`)
-- *(step 3)* the account's shared resources — budget, GitHub OIDC provider,
-  the API's producer user, the Doppler sync role
-- *(step 3)* one `module "<cog>"` per pipeline cog, from `modules/cog-worker`
+- `state.tf` — the bucket this repository's own state lives in
+- `account.tf` — one-per-account resources: the budget, the GitHub OIDC
+  provider, and the API's producer user
+- `doppler.tf` — the role Doppler assumes to sync secrets into Parameter
+  Store
+- `cogs.tf` — one `module` block per pipeline cog, from
+  `modules/cog-worker`: queue, dead-letter queue and alarm, the worker
+  function and its event source mapping, and the role the cog's CI deploys
+  code through
 
 Cog repositories own their **code** and deploy it (`lambda-deploy.yml`,
 `UpdateFunctionCode` only). This repository owns everything else.
@@ -53,6 +58,12 @@ import {
   id = "mini-app-polis-tfstate-400200465748"
 }
 ```
+
+## Adding a cog
+
+Add a `module` block to `cogs.tf`, list its secrets by name (their values go
+in Doppler), apply, confirm the alert subscription email, and set the three
+repository variables from `terraform output cogs` in the cog's repository.
 
 ## Everyday use
 

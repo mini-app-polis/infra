@@ -10,8 +10,6 @@
 # The Doppler free plan allows five synced configs. One per Lambda cog in
 # production; dev runs locally with `doppler run` and is never synced.
 
-data "aws_caller_identity" "current" {}
-
 locals {
   # Everything the fleet's workers read lives under this prefix.
   ssm_prefix = "mini-app-polis"
