@@ -2,8 +2,12 @@
 # changes reach AWS day to day.
 #
 #   pull request dev → main   plan, with infra-plan (read-only)
-#   push to main              plan, then apply with infra-apply once the
-#                             `production` environment's reviewer approves
+#   push to main              plan, then apply with infra-apply, in the
+#                             `production` environment
+#
+# The merge is the decision: the pull request shows the plan, and merging
+# it applies. There is no second approval — for one operator it would be a
+# click on something already decided.
 #
 # Nothing is applied from dev, and main takes changes only by pull request
 # (branch protection), so main is always what is applied. The admin IAM
@@ -42,8 +46,7 @@ data "aws_iam_policy_document" "infra_plan_assume" {
       values   = ["sts.amazonaws.com"]
     }
 
-    # A pull request in this repository, or a push to main (the plan shown
-    # before the apply is approved).
+    # A pull request in this repository, or a push to main.
     condition {
       test     = "StringEquals"
       variable = local.oidc_sub
@@ -107,9 +110,9 @@ data "aws_iam_policy_document" "infra_apply_assume" {
       values   = ["sts.amazonaws.com"]
     }
 
-    # Only a job running in the `production` environment, which GitHub
-    # holds until its required reviewer approves and which is restricted
-    # to the main branch.
+    # Only a job running in the `production` environment, which the
+    # repository's settings restrict to the main branch — and main takes
+    # changes only by pull request.
     condition {
       test     = "StringEquals"
       variable = local.oidc_sub
@@ -120,15 +123,15 @@ data "aws_iam_policy_document" "infra_apply_assume" {
 
 resource "aws_iam_role" "infra_apply" {
   name               = "infra-apply"
-  description        = "mini-app-polis/infra CI: applies merges to main, from the production environment after approval."
+  description        = "mini-app-polis/infra CI: applies merges to main, from the production environment."
   assume_role_policy = data.aws_iam_policy_document.infra_apply_assume.json
 }
 
 # Administrator, honestly labelled. This root creates IAM roles and
 # policies, and anything that can do that can grant itself anything — a
 # narrower policy would be a list that looks least-privilege and is not.
-# The control is who can assume it: one environment, one reviewer, one
-# branch.
+# The control is who can assume it: one environment, deployable only from
+# main, which changes only by a merged pull request.
 resource "aws_iam_role_policy_attachment" "infra_apply_admin" {
   role       = aws_iam_role.infra_apply.name
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"

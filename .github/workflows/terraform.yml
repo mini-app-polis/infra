@@ -2,11 +2,10 @@
 #
 #   pull request → plan      infra-plan (read-only), -lock=false; the plan
 #                            is the job summary
-#   push to main → plan      the same, so the approver sees exactly what
-#                            main would apply
-#                → apply     infra-apply, in the `production` environment:
-#                            GitHub holds the job until its reviewer
-#                            approves, then plans again and applies
+#   push to main → plan      the same, from main
+#                → apply     infra-apply, in the `production` environment
+#                            (main only): plans again under the lock and
+#                            applies. The merge is the approval.
 #
 # Nothing applies from dev, and main accepts changes only by pull request,
 # so main is what is applied. After each merge, sync-dev fast-forwards dev
@@ -100,14 +99,12 @@ jobs:
     needs: plan
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.plan.outputs.changes == 'true'
     runs-on: ubuntu-latest
-    # Required reviewer and main-only deployment are set on the environment
-    # in the repository's settings; the apply role trusts this environment
-    # and nothing else.
+    # Main-only deployment is set on the environment in the repository's
+    # settings; the apply role trusts this environment and nothing else.
     environment: production
     # One apply at a time against the one state, and never cancelled
     # midway. On this job only: plans take no lock and change nothing, so
-    # an apply waiting for approval (up to GitHub's 30 days) must not hold
-    # up the plan on the next pull request.
+    # a running apply must not hold up the plan on the next pull request.
     concurrency:
       group: terraform-apply
       cancel-in-progress: false
@@ -132,7 +129,7 @@ jobs:
 
       # Planned again under the lock rather than applying the plan job's
       # file: the file never leaves that job (see the header). If anything
-      # changed between approval and now, this plan shows it in the log.
+      # changed since that plan, this one shows it in the log.
       - name: apply
         run: |
           terraform plan -no-color -out tfplan
