@@ -9,7 +9,8 @@
 #                            approves, then plans again and applies
 #
 # Nothing applies from dev, and main accepts changes only by pull request,
-# so main is what is applied. See ci.tf for the roles.
+# so main is what is applied. After each merge, sync-dev fast-forwards dev
+# to main. See ci.tf for the roles.
 #
 # Plans no longer carry secrets — none pass through Terraform — and the one
 # sensitive value read (the alert address) prints as (sensitive). No plan
@@ -83,6 +84,8 @@ jobs:
       - name: summary
         if: always()
         run: |
+          # Nothing to summarise when the job failed before planning.
+          [ -f plan.txt ] || exit 0
           {
             echo "## terraform plan"
             echo
@@ -132,3 +135,20 @@ jobs:
         run: |
           terraform plan -no-color -out tfplan
           terraform apply -no-color tfplan
+
+  # After a merge, main is dev plus a merge commit. Move dev up to it so the
+  # next pull request starts from what main holds. A plain push: if dev has
+  # gained commits main does not have, it is not a fast-forward, the push
+  # is refused, and this job fails rather than discarding them.
+  sync-dev:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: fast-forward dev to main
+        run: git push origin HEAD:refs/heads/dev

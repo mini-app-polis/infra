@@ -14,9 +14,15 @@
 # outside the organisation.
 
 locals {
-  github_repo = "mini-app-polis/infra"
-  oidc_sub    = "token.actions.githubusercontent.com:sub"
-  oidc_aud    = "token.actions.githubusercontent.com:aud"
+  # GitHub issues this repository's tokens with immutable ids in the
+  # subject — owner@owner_id/repo@repo_id — because it was created after
+  # GitHub made that the default for new repositories. The older cog
+  # repositories still present `mini-app-polis/<repo>`. The ids are the
+  # better match: a repository deleted and recreated under the same name
+  # gets a new id, so it cannot inherit these roles.
+  github_sub = "repo:mini-app-polis@270520182/infra@1385980329"
+  oidc_sub   = "token.actions.githubusercontent.com:sub"
+  oidc_aud   = "token.actions.githubusercontent.com:aud"
 }
 
 # ── Plan ─────────────────────────────────────────────────────────────────
@@ -42,8 +48,8 @@ data "aws_iam_policy_document" "infra_plan_assume" {
       test     = "StringEquals"
       variable = local.oidc_sub
       values = [
-        "repo:${local.github_repo}:pull_request",
-        "repo:${local.github_repo}:ref:refs/heads/main",
+        "${local.github_sub}:pull_request",
+        "${local.github_sub}:ref:refs/heads/main",
       ]
     }
   }
@@ -106,7 +112,7 @@ data "aws_iam_policy_document" "infra_apply_assume" {
     condition {
       test     = "StringEquals"
       variable = local.oidc_sub
-      values   = ["repo:${local.github_repo}:environment:production"]
+      values   = ["${local.github_sub}:environment:production"]
     }
   }
 }
