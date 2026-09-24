@@ -8,6 +8,7 @@ state:
   provider, and the API's producer user
 - `doppler.tf` — the role Doppler assumes to sync secrets into Parameter
   Store
+- `ci.tf` — the roles this repository's workflow plans and applies with
 - `cogs.tf` — one `module` block per pipeline cog, from
   `modules/cog-worker`: queue, dead-letter queue and alarm, the worker
   function and its event source mapping, and the role the cog's CI deploys
@@ -65,13 +66,31 @@ Add a `module` block to `cogs.tf`, list its secrets by name (their values go
 in Doppler), apply, confirm the alert subscription email, and set the three
 repository variables from `terraform output cogs` in the cog's repository.
 
-## Everyday use
+## Making a change
+
+1. Commit to `dev` and open a pull request to `main`. CI plans it with the
+   read-only `infra-plan` role; the plan is the job summary.
+2. Merge. CI plans again on `main`, then the apply job waits in the
+   `production` environment for approval. Approve, and it applies with
+   `infra-apply`.
+
+Nothing applies from `dev`, and `main` accepts changes only by pull request,
+so `main` is always what is applied. Roles: `ci.tf`. Workflow:
+`.github/workflows/terraform.yml`.
+
+### Break-glass
+
+The admin IAM user on the workstation still works, for when CI cannot — a
+broken role, a locked state:
 
 ```bash
 export AWS_PROFILE=miniapppolis
 terraform plan -out tfplan
 terraform apply tfplan
 ```
+
+Commit whatever that applied to `main` straight after, through a pull
+request, or the next CI apply will undo it.
 
 ## Why Terraform, not CloudFormation/SAM/CDK
 
