@@ -136,10 +136,11 @@ module "watcher" {
 
   schedule_interval_seconds = 60
 
-  # Off until cutover. Apply, deploy the code, invoke it by hand, then flip
-  # this and delete the Railway service. Overlap with the Railway watcher is
-  # safe once the API's dispatch claims are live.
-  enabled = false
+  # On since 2026-09-26, after a hand-invoked tick queued live-history's
+  # first sweep and a second answered it as already claimed. Overlap with
+  # the Railway watcher is safe: the API's dispatch claims make the second
+  # asker a no-op.
+  enabled = true
 
   ssm_parameters = {
     CSV_SOURCE_FOLDER_ID               = "CSV_SOURCE_FOLDER_ID"
