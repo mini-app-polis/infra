@@ -12,7 +12,12 @@ state:
 - `cogs.tf` — one `module` block per pipeline cog, from
   `modules/cog-worker`: queue, dead-letter queue and alarm, the worker
   function and its event source mapping, and the role the cog's CI deploys
-  code through
+  code through. watcher-cog is the exception: it has no queue and runs on a
+  schedule, from `modules/scheduled-worker` — the function, an EventBridge
+  rule, a failing-ticks alarm, and the same deploy role
+- `outputs.tf` — besides each cog's repository variables, a plan-time check
+  that api-kaianolevine-com's six-hour dispatch claim window outlasts every
+  cog's longest possible job
 
 Cog repositories own their **code** and deploy it (`lambda-deploy.yml`,
 `UpdateFunctionCode` only). This repository owns everything else.

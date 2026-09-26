@@ -115,3 +115,44 @@ module "transcription" {
     WHISPER_MODEL          = "WHISPER_MODEL"
   }
 }
+
+# Not a queue consumer: a tick every minute that lists the watched Drive
+# folders and asks the API for what it finds. The API's dispatch claims turn
+# the repeats into one job per file, so this remembers nothing and a missed
+# tick is caught by the next. Replaces the always-on Railway watcher-cog.
+module "watcher" {
+  source = "./modules/scheduled-worker"
+
+  name                     = "watcher"
+  github_repo              = "mini-app-polis/watcher-cog"
+  github_oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
+  alert_email              = local.alert_email
+  api_base_url             = var.kaiano_api_base_url
+
+  handler         = "watcher_cog.handler.lambda_handler"
+  architecture    = "arm64"
+  timeout_seconds = 50 # a tick is seconds; below the one-minute interval
+  memory_mb       = 512
+
+  schedule_interval_seconds = 60
+
+  # Off until cutover. Apply, deploy the code, invoke it by hand, then flip
+  # this and delete the Railway service. Overlap with the Railway watcher is
+  # safe once the API's dispatch claims are live.
+  enabled = false
+
+  ssm_parameters = {
+    CSV_SOURCE_FOLDER_ID               = "CSV_SOURCE_FOLDER_ID"
+    GOOGLE_CREDENTIALS_JSON            = "GOOGLE_CREDENTIALS_JSON"
+    GOOGLE_DRIVE_VOICE_INBOX_FOLDER_ID = "GOOGLE_DRIVE_VOICE_INBOX_FOLDER_ID"
+    # The silence detector: the one alert that fires when nothing is
+    # invoking the function at all. Required, not optional.
+    HEALTHCHECKS_URL_WATCHER = "HEALTHCHECKS_URL_WATCHER"
+    NOTES_INPUT_FOLDER_ID    = "NOTES_INPUT_FOLDER_ID"
+    WATCHER_COG_API_KEY      = "WATCHER_COG_API_KEY"
+  }
+  ssm_optional_parameters = {
+    LOG_LEVEL  = "LOG_LEVEL"
+    SENTRY_DSN = "SENTRY_DSN"
+  }
+}

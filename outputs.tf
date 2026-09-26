@@ -22,6 +22,48 @@ output "cogs" {
   }
 }
 
+output "watcher" {
+  description = "watcher-cog's repository variables, and whether its schedule is on."
+  value = {
+    AWS_DEPLOY_ROLE_ARN = module.watcher.deploy_role_arn
+    AWS_FUNCTION_NAME   = module.watcher.function_name
+    AWS_REGION          = var.region
+    alerts_topic_arn    = module.watcher.alerts_topic_arn
+    schedule_state      = module.watcher.schedule_state
+  }
+}
+
+locals {
+  # api-kaianolevine-com's CLAIM_WINDOW (services/dispatch_claims.py). The
+  # watcher asks for every file on every tick, and the API dispatches a
+  # file again once its claim is this old — on the reasoning that its job
+  # has by then failed through every retry. That holds only while no job
+  # can still be in flight after this long.
+  dispatch_claim_window_seconds = 6 * 3600
+
+  cog_max_in_flight_seconds = {
+    evaluator     = module.evaluator.max_in_flight_seconds
+    deejay        = module.deejay.max_in_flight_seconds
+    transcription = module.transcription.max_in_flight_seconds
+  }
+}
+
+output "dispatch_claim_headroom_seconds" {
+  description = "Per cog: how far the API's dispatch claim window outlasts its longest possible job."
+  value = {
+    for name, seconds in local.cog_max_in_flight_seconds :
+    name => local.dispatch_claim_window_seconds - seconds
+  }
+
+  precondition {
+    condition = alltrue([
+      for seconds in values(local.cog_max_in_flight_seconds) :
+      seconds < local.dispatch_claim_window_seconds
+    ])
+    error_message = "A cog's queue can hold a job in flight longer than the API's six-hour dispatch claim window, so the watcher would dispatch a file that is still being retried. Shorten that cog's timeout or max_receive_count, or lengthen CLAIM_WINDOW in api-kaianolevine-com and dispatch_claim_window_seconds here together."
+  }
+}
+
 output "producer_user_name" {
   description = "Mint its access key by hand, straight into Doppler."
   value       = aws_iam_user.producer.name
