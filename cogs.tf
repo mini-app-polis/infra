@@ -29,6 +29,7 @@ module "evaluator" {
   }
   ssm_optional_parameters = {
     ANTHROPIC_API_KEY = "ANTHROPIC_API_KEY"
+    ANTHROPIC_MODEL   = "ANTHROPIC_MODEL"
     SENTRY_DSN        = "SENTRY_DSN"
   }
 }
