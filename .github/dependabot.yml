@@ -20,6 +20,7 @@ updates:
     directories:
       - "/"
       - "/modules/cog-worker"
+      - "/modules/scheduled-worker"
     schedule:
       interval: "weekly"
     target-branch: "dev"
@@ -28,3 +29,7 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+      # The update-types rule above did not stop a ~> 5.0 -> ~> 6.66
+      # requirement bump; pin the major explicitly for the AWS provider.
+      - dependency-name: "hashicorp/aws"
+        versions: [">= 6.0.0"]
