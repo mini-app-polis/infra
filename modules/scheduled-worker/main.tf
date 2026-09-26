@@ -18,7 +18,7 @@ locals {
 
   ssm_parameter_arns = [
     for p in distinct(values(merge(var.ssm_parameters, var.ssm_optional_parameters))) :
-    "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter${var.ssm_prefix}${p}"
+    "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${var.ssm_prefix}${p}"
   ]
 }
 
