@@ -30,6 +30,6 @@ updates:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
       # The update-types rule above did not stop a ~> 5.0 -> ~> 6.66
-      # requirement bump; pin the major explicitly for the AWS provider.
+      # requirement bump; hold the AWS provider's next major explicitly.
       - dependency-name: "hashicorp/aws"
-        versions: [">= 6.0.0"]
+        versions: [">= 7.0.0"]
