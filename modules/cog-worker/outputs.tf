@@ -25,3 +25,13 @@ output "alerts_topic_arn" {
   description = "Check the email subscription is Confirmed, not PendingConfirmation."
   value       = aws_sns_topic.alerts.arn
 }
+
+output "max_in_flight_seconds" {
+  description = <<-DESC
+    The longest a job can spend between enqueue and the dead-letter queue:
+    every delivery holds it for one visibility timeout. api-kaianolevine-com's
+    dispatch claim window must be longer, or a file still being retried is
+    dispatched again; the root checks it.
+  DESC
+  value       = var.max_receive_count * aws_sqs_queue.jobs.visibility_timeout_seconds
+}
