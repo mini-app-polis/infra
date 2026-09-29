@@ -1,6 +1,7 @@
 # One pipeline cog's runtime: its queue and dead-letter queue, the worker
 # function and the mapping that feeds it, the role CI deploys code through,
-# and an alarm that tells someone when a job is dead-lettered.
+# and alarms that tell someone when a job is dead-lettered or the queue has
+# stopped draining.
 #
 # The cog's repository owns the function's code and deploys it with
 # UpdateFunctionCode, nothing more. Everything else is here.
@@ -280,6 +281,34 @@ resource "aws_cloudwatch_metric_alarm" "dlq_not_empty" {
 
   dimensions = {
     QueueName = aws_sqs_queue.dlq.name
+  }
+
+  alarm_actions = [aws_sns_topic.alerts.arn]
+  ok_actions    = [aws_sns_topic.alerts.arn]
+
+  tags = local.tags
+}
+
+# The consumer has stopped, not the job. A message that keeps failing is
+# gone to the dead-letter queue by max_in_flight_seconds; one still in the
+# work queue past that was never picked up — the event source mapping is
+# disabled, the function is throttled to zero, or deploys are broken. The
+# dead-letter alarm cannot see this: nothing ever reaches it. Derived from
+# the same values as the redrive, so the two cannot drift apart.
+resource "aws_cloudwatch_metric_alarm" "queue_stalled" {
+  alarm_name          = "${var.name}-queue-stalled"
+  alarm_description   = "A job has waited longer than every retry could take, so nothing is consuming ${aws_sqs_queue.jobs.name}."
+  namespace           = "AWS/SQS"
+  metric_name         = "ApproximateAgeOfOldestMessage"
+  statistic           = "Maximum"
+  period              = 300
+  evaluation_periods  = 1
+  threshold           = var.max_receive_count * aws_sqs_queue.jobs.visibility_timeout_seconds
+  comparison_operator = "GreaterThanThreshold"
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    QueueName = aws_sqs_queue.jobs.name
   }
 
   alarm_actions = [aws_sns_topic.alerts.arn]
