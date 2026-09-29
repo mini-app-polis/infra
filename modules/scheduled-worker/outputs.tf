@@ -13,11 +13,6 @@ output "alerts_topic_arn" {
   value       = aws_sns_topic.alerts.arn
 }
 
-output "timeout_seconds" {
-  description = "Drawn on the dashboard's duration graph."
-  value       = aws_lambda_function.worker.timeout
-}
-
 output "schedule_state" {
   description = "ENABLED or DISABLED — whether the cutover has happened."
   value       = aws_cloudwatch_event_rule.schedule.state

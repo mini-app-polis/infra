@@ -15,11 +15,6 @@ output "dlq_name" {
   value = aws_sqs_queue.dlq.name
 }
 
-output "timeout_seconds" {
-  description = "Drawn on the dashboard's duration graph: p99 near this line is a job about to be killed."
-  value       = aws_lambda_function.worker.timeout
-}
-
 output "dlq_url" {
   description = "For watching a poison message arrive, and redriving it once fixed."
   value       = aws_sqs_queue.dlq.url
