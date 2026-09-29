@@ -22,3 +22,9 @@ exemptions:
       Nothing here reads environment variables. Terraform's inputs are
       variables with defaults in the repository, and the one value that is
       not committed — the alert address — is read from Parameter Store.
+  - rule: CD-034
+    reason: >
+      No automerge caller, deliberately. A merge here is an apply: it changes
+      the AWS account, so every pull request — Dependabot's included — is
+      merged by a person after reading its plan. promote.yml is kept; the
+      path to main is still the promotion pull request.
