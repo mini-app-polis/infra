@@ -87,6 +87,22 @@ data "aws_iam_policy_document" "producer" {
     actions   = ["sqs:SendMessage"]
     resources = ["arn:aws:sqs:${var.region}:${data.aws_caller_identity.current.account_id}:*-jobs"]
   }
+
+  # The same key publishes the API's request metrics (common-python-utils
+  # request_metrics), rather than minting a second long-lived credential
+  # for Railway. PutMetricData has no resource-level permissions, so the
+  # namespace condition is the whole boundary: it can write API metrics
+  # and cannot forge a cog's.
+  statement {
+    actions   = ["cloudwatch:PutMetricData"]
+    resources = ["*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "cloudwatch:namespace"
+      values   = ["MiniAppPolis/Api"]
+    }
+  }
 }
 
 resource "aws_iam_user_policy" "producer" {
