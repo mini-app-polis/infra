@@ -36,7 +36,7 @@ locals {
           region = var.region
           view   = "timeSeries"
           stat   = "Sum"
-          period = 300
+          period = 3600
           metrics = [
             ["AWS/Lambda", "Invocations", "FunctionName", local.dashboard_queue_cogs[name].function_name],
             [".", "Errors", ".", ".", { color = "#d62728" }],
@@ -54,15 +54,12 @@ locals {
           title  = "${name}: duration (ms)"
           region = var.region
           view   = "timeSeries"
-          period = 300
+          period = 3600
           metrics = [
             ["AWS/Lambda", "Duration", "FunctionName", local.dashboard_queue_cogs[name].function_name, { stat = "p50", label = "p50" }],
             ["...", { stat = "p95", label = "p95" }],
             ["...", { stat = "p99", label = "p99" }],
           ]
-          annotations = {
-            horizontal = [{ label = "timeout", value = local.dashboard_queue_cogs[name].timeout_seconds * 1000 }]
-          }
         }
       },
       {
@@ -123,7 +120,7 @@ locals {
           region = var.region
           view   = "timeSeries"
           stat   = "Sum"
-          period = 300
+          period = 3600
           metrics = [
             ["AWS/Lambda", "Invocations", "FunctionName", local.dashboard_scheduled_cogs[name].function_name],
             [".", "Errors", ".", ".", { color = "#d62728" }],
@@ -141,15 +138,12 @@ locals {
           title  = "${name}: duration (ms)"
           region = var.region
           view   = "timeSeries"
-          period = 300
+          period = 3600
           metrics = [
             ["AWS/Lambda", "Duration", "FunctionName", local.dashboard_scheduled_cogs[name].function_name, { stat = "p50", label = "p50" }],
             ["...", { stat = "p95", label = "p95" }],
             ["...", { stat = "p99", label = "p99" }],
           ]
-          annotations = {
-            horizontal = [{ label = "timeout", value = local.dashboard_scheduled_cogs[name].timeout_seconds * 1000 }]
-          }
         }
       },
     ]
@@ -168,7 +162,7 @@ resource "aws_cloudwatch_dashboard" "services" {
         width  = 24
         height = local.dashboard_header
         properties = {
-          markdown = "## mini-app-polis services\nOne row per cog. Duration shows p50/p95/p99 against the function timeout; the queue graph marks where the stalled alarm fires. Defined in mini-app-polis/infra `observability.tf`."
+          markdown = "## mini-app-polis services\nOne row per cog. Invocations and duration are hourly, since the cogs run in bursts; queues are 5-minute, and the queue graph marks where the stalled alarm fires. Defined in mini-app-polis/infra `observability.tf`."
         }
       }],
       flatten(local.queue_cog_rows),
