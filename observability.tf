@@ -26,6 +26,13 @@ locals {
   # The Service dimension each API publishes under.
   dashboard_apis = ["api-kaianolevine-com"]
 
+  # Per API, the routes it gives their own Latency series (the `routes`
+  # argument to RequestMetricsMiddleware). Must match what the API
+  # publishes: a route listed here and not there draws an empty line.
+  dashboard_api_routes = {
+    "api-kaianolevine-com" = ["/v1/standards/catalog", "/v1/evaluations"]
+  }
+
   dashboard_row_height = 6
   dashboard_header     = 2
 
@@ -35,7 +42,7 @@ locals {
         type   = "metric"
         x      = 0
         y      = local.dashboard_header + i * local.dashboard_row_height
-        width  = 8
+        width  = 6
         height = local.dashboard_row_height
         properties = {
           title  = "${service}: latency (ms)"
@@ -51,9 +58,9 @@ locals {
       },
       {
         type   = "metric"
-        x      = 8
+        x      = 6
         y      = local.dashboard_header + i * local.dashboard_row_height
-        width  = 8
+        width  = 6
         height = local.dashboard_row_height
         properties = {
           title  = "${service}: requests"
@@ -69,9 +76,9 @@ locals {
       },
       {
         type   = "metric"
-        x      = 16
+        x      = 12
         y      = local.dashboard_header + i * local.dashboard_row_height
-        width  = 8
+        width  = 6
         height = local.dashboard_row_height
         properties = {
           title  = "${service}: 5xx rate (%)"
@@ -82,6 +89,24 @@ locals {
             [{ expression = "100 * errors / requests", label = "5xx %", id = "rate" }],
             ["MiniAppPolis/Api", "Errors5xx", "Service", service, { stat = "Sum", id = "errors", visible = false }],
             [".", "Latency", ".", ".", { stat = "SampleCount", id = "requests", visible = false }],
+          ]
+        }
+      },
+      {
+        type   = "metric"
+        x      = 18
+        y      = local.dashboard_header + i * local.dashboard_row_height
+        width  = 6
+        height = local.dashboard_row_height
+        properties = {
+          title  = "${service}: p95 by route (ms)"
+          region = var.region
+          view   = "timeSeries"
+          period = 300
+          stat   = "p95"
+          metrics = [
+            for route in lookup(local.dashboard_api_routes, service, []) :
+            ["MiniAppPolis/Api", "Latency", "Service", service, "Route", route, { label = route }]
           ]
         }
       },
