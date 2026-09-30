@@ -137,6 +137,11 @@ module "watcher" {
 
   schedule_interval_seconds = 60
 
+  # Ten failed ticks in a row, not 3 of 5: an API deploy or restart fails a
+  # few ticks and the next tick catches up, so only a sustained failure pages.
+  error_alarm_window    = 10
+  error_alarm_threshold = 10
+
   # On since 2026-09-26, after a hand-invoked tick queued live-history's
   # first sweep and a second answered it as already claimed. Overlap with
   # the Railway watcher is safe: the API's dispatch claims make the second
