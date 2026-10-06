@@ -30,6 +30,7 @@ module "evaluator" {
   ssm_optional_parameters = {
     ANTHROPIC_API_KEY = "ANTHROPIC_API_KEY"
     ANTHROPIC_MODEL   = "ANTHROPIC_MODEL"
+    LOGGING_LEVEL     = "LOGGING_LEVEL"
     SENTRY_DSN        = "SENTRY_DSN"
   }
 }
@@ -65,6 +66,7 @@ module "deejay" {
     GOOGLE_CREDENTIALS_JSON = "GOOGLE_CREDENTIALS_JSON"
   }
   ssm_optional_parameters = {
+    LOGGING_LEVEL             = "LOGGING_LEVEL"
     SENTRY_DSN                = "SENTRY_DSN"
     SPOTIFY_RADIO_PLAYLIST_ID = "SPOTIFY_RADIO_PLAYLIST_ID"
     SPOTIPY_CLIENT_ID         = "SPOTIPY_CLIENT_ID"
