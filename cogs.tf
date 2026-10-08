@@ -31,7 +31,7 @@ module "evaluator" {
     ANTHROPIC_API_KEY = "ANTHROPIC_API_KEY"
     ANTHROPIC_MODEL   = "ANTHROPIC_MODEL"
     LOGGING_LEVEL     = "LOGGING_LEVEL"
-    SENTRY_DSN        = "SENTRY_DSN"
+    SENTRY_DSN_COGS   = "SENTRY_DSN_COGS"
   }
 }
 
@@ -67,7 +67,7 @@ module "deejay" {
   }
   ssm_optional_parameters = {
     LOGGING_LEVEL             = "LOGGING_LEVEL"
-    SENTRY_DSN                = "SENTRY_DSN"
+    SENTRY_DSN_COGS           = "SENTRY_DSN_COGS"
     SPOTIFY_RADIO_PLAYLIST_ID = "SPOTIFY_RADIO_PLAYLIST_ID"
     SPOTIPY_CLIENT_ID         = "SPOTIPY_CLIENT_ID"
     SPOTIPY_CLIENT_SECRET     = "SPOTIPY_CLIENT_SECRET"
@@ -114,7 +114,7 @@ module "transcription" {
     LLM_PROVIDER           = "LLM_PROVIDER"
     LOGGING_LEVEL          = "LOGGING_LEVEL"
     MIN_TRANSCRIPT_CHARS   = "MIN_TRANSCRIPT_CHARS"
-    SENTRY_DSN             = "SENTRY_DSN"
+    SENTRY_DSN_COGS        = "SENTRY_DSN_COGS"
     WHISPER_MODEL          = "WHISPER_MODEL"
   }
 }
@@ -161,7 +161,7 @@ module "watcher" {
     WATCHER_COG_API_KEY      = "WATCHER_COG_API_KEY"
   }
   ssm_optional_parameters = {
-    LOG_LEVEL  = "LOG_LEVEL"
-    SENTRY_DSN = "SENTRY_DSN"
+    LOG_LEVEL       = "LOG_LEVEL"
+    SENTRY_DSN_COGS = "SENTRY_DSN_COGS"
   }
 }
