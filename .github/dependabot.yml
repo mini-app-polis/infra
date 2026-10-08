@@ -12,6 +12,7 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "sunday"
     target-branch: "dev"
     commit-message:
       prefix: "chore(deps)"
@@ -23,6 +24,7 @@ updates:
       - "/modules/scheduled-worker"
     schedule:
       interval: "weekly"
+      day: "sunday"
     target-branch: "dev"
     commit-message:
       prefix: "chore(deps)"
