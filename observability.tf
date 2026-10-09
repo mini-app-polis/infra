@@ -3,7 +3,7 @@
 # cost. The API rows are custom metrics published by common-python-utils'
 # request_metrics middleware (MiniAppPolis/Api) and billed per metric.
 # Dashboards are free up to three per account at 50 metrics each; this one
-# references about 30.
+# references about 40.
 #
 # Built from the cog modules, so a cog added to cogs.tf and to the maps
 # below gets its row; an API gets its row by being added to
@@ -24,7 +24,7 @@ locals {
   }
 
   # The Service dimension each API publishes under.
-  dashboard_apis = ["api-kaianolevine-com"]
+  dashboard_apis = ["api-kaianolevine-com", "api-deejaytools"]
 
   # Per API, the routes it gives their own Latency series (the `routes`
   # argument to RequestMetricsMiddleware). Must match what the API
@@ -37,7 +37,7 @@ locals {
   dashboard_header     = 2
 
   api_rows = [
-    for i, service in local.dashboard_apis : [
+    for i, service in local.dashboard_apis : concat([
       {
         type   = "metric"
         x      = 0
@@ -92,6 +92,9 @@ locals {
           ]
         }
       },
+      # Only for an API that publishes per-route series: CloudWatch rejects
+      # a widget with no metrics.
+      ], length(lookup(local.dashboard_api_routes, service, [])) == 0 ? [] : [
       {
         type   = "metric"
         x      = 18
@@ -110,7 +113,7 @@ locals {
           ]
         }
       },
-    ]
+    ])
   ]
 
   cog_rows_top = local.dashboard_header + length(local.dashboard_apis) * local.dashboard_row_height
