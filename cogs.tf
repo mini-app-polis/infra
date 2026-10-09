@@ -164,7 +164,7 @@ module "watcher" {
     WATCHER_COG_API_KEY      = "WATCHER_COG_API_KEY"
   }
   ssm_optional_parameters = {
-    LOG_LEVEL       = "LOG_LEVEL"
+    LOGGING_LEVEL   = "LOGGING_LEVEL"
     SENTRY_DSN_COGS = "SENTRY_DSN_COGS"
   }
 }
