@@ -1,14 +1,17 @@
-# The role Doppler assumes to sync each Lambda cog's secrets into SSM
+# The role Doppler assumes to sync the Lambda workers' secrets into SSM
 # Parameter Store.
 #
-# Doppler is the one place secrets are edited. Its AWS Parameter Store
-# integration writes each synced config under a path prefix —
-# /mini-app-polis/<cog>/ — and each worker reads only its own prefix at cold
-# start. Nothing secret passes through Terraform, so nothing secret is in
-# state or in a plan.
+# Doppler is the one place secrets are edited. One config,
+# mini-app-polis-ecosystem / prd, syncs to Parameter Store under a single
+# prefix — /mini-app-polis/prd/ — and each worker loads the parameters its
+# module block names (ssm_parameters / ssm_optional_parameters in cogs.tf),
+# not the whole prefix, at cold start and again on each invocation. Nothing
+# secret passes through Terraform, so nothing secret is in state or in a plan.
 #
-# The Doppler free plan allows five synced configs. One per Lambda cog in
-# production; dev runs locally with `doppler run` and is never synced.
+# Because the config is shared, a value that differs per worker carries the
+# worker in its name (DEEJAY_COG_API_KEY), so one name never means two
+# things (ecosystem-standards CD-011). The dev config is not synced to AWS:
+# local runs use it through `doppler run`.
 
 locals {
   # Everything the fleet's workers read lives under this prefix.
