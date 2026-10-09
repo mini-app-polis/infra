@@ -19,9 +19,12 @@ module "evaluator" {
   timeout_seconds = 300
   memory_mb       = 1024
 
-  # A fleet pass is N concurrent jobs, each posting back to one Railway
-  # container; four leaves the API most of its headroom.
-  max_concurrency = 4
+  # A fleet pass is one job per repo, so 20 runs most of the fleet in one
+  # wave. Each job posts back to one Railway container (single uvicorn
+  # process, default 15-connection pool), but the posts are short. The
+  # tighter limit in LLM mode is Anthropic's tokens per minute: 429s are
+  # retried, but a retry still has to fit inside the 300s timeout.
+  max_concurrency = 20
 
   ssm_parameters = {
     EVALUATOR_COG_API_KEY = "EVALUATOR_COG_API_KEY"
