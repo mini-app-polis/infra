@@ -31,6 +31,12 @@ locals {
   # publishes: a route listed here and not there draws an empty line.
   dashboard_api_routes = {
     "api-kaianolevine-com" = ["/v1/standards/catalog", "/v1/evaluations"]
+    "api-deejaytools" = [
+      "/v1/checkins",
+      "/v1/queue/promote",
+      "/v1/queue/{session_id}/active",
+      "/v1/queue/{session_id}/waiting",
+    ]
   }
 
   dashboard_row_height = 6
