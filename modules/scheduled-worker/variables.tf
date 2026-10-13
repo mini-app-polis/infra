@@ -80,6 +80,23 @@ variable "schedule_interval_seconds" {
   }
 }
 
+variable "schedule_targets" {
+  description = <<-EOT
+    One invocation per entry on every schedule tick, each passed its map as
+    the event. The default is a single target with an empty event. A worker
+    that fans out — one invocation per folder, say — lists one entry per
+    unit of work, so each fails, times out and alarms on its own.
+  EOT
+  type        = map(map(string))
+  default     = { default = {} }
+
+  validation {
+    # EventBridge's limit on targets per rule.
+    condition     = length(var.schedule_targets) >= 1 && length(var.schedule_targets) <= 5
+    error_message = "schedule_targets has between 1 and 5 entries (EventBridge's per-rule limit)."
+  }
+}
+
 variable "enabled" {
   description = "Whether the schedule fires. Off until cutover: the function can be deployed and invoked by hand while the service it replaces still runs."
   type        = bool
