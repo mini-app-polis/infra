@@ -12,6 +12,10 @@ data "aws_region" "current" {}
 locals {
   tags = { Component = "${var.name}-worker" }
 
+  # SQS requires a FIFO queue's name to end .fifo; the producer derives the
+  # same names (api-kaianolevine-com job_queue.queue_name).
+  queue_suffix = var.fifo ? ".fifo" : ""
+
   ssm_parameter_arns = [
     for p in distinct(values(merge(var.ssm_parameters, var.ssm_optional_parameters))) :
     "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${var.ssm_prefix}${p}"
@@ -21,7 +25,8 @@ locals {
 # ── Queue ────────────────────────────────────────────────────────────────
 
 resource "aws_sqs_queue" "dlq" {
-  name = "${var.name}-jobs-dlq"
+  name       = "${var.name}-jobs-dlq${local.queue_suffix}"
+  fifo_queue = var.fifo # a FIFO queue's dead-letter queue must be FIFO too
 
   # The maximum. A message lands here because something needs a person, and
   # a person is slower than the work queue's four days.
@@ -31,7 +36,12 @@ resource "aws_sqs_queue" "dlq" {
 }
 
 resource "aws_sqs_queue" "jobs" {
-  name = "${var.name}-jobs"
+  name       = "${var.name}-jobs${local.queue_suffix}"
+  fifo_queue = var.fifo
+
+  # The producer sends no deduplication id: an identical body within five
+  # minutes is one job, which the API's dispatch claims already make true.
+  content_based_deduplication = var.fifo ? true : null
 
   # Must exceed the function timeout, or SQS redelivers a job that is still
   # running and it runs twice. Derived so the two cannot drift apart.

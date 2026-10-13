@@ -107,9 +107,24 @@ variable "ssm_optional_parameters" {
 # ── Queue and concurrency ────────────────────────────────────────────────
 
 variable "max_receive_count" {
-  description = "Deliveries before a message is dead-lettered. Raise it when reserved_concurrency is 1: a throttled attempt still counts."
+  description = "Deliveries before a message is dead-lettered. On a standard queue with reserved_concurrency = 1 a throttled attempt still counts, so raise it there; a FIFO queue is not throttled, so 3 is enough."
   type        = number
   default     = 3
+}
+
+variable "fifo" {
+  description = <<-DESC
+    Make the queue and its dead-letter queue FIFO (names end .fifo). For a
+    serial cog: the producer sends every job in one message group, so the
+    trigger is handed one message at a time and nothing waiting is ever
+    throttled into spending a delivery. A standard queue with
+    reserved_concurrency = 1 dead-letters good jobs under a burst larger
+    than max_receive_count. The cost is head-of-line blocking: a failing
+    job holds the queue until it succeeds or is dead-lettered. The producer
+    (api-kaianolevine-com job_queue.FIFO_COGS) must agree.
+  DESC
+  type        = bool
+  default     = false
 }
 
 variable "reserved_concurrency" {

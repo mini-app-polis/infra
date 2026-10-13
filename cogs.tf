@@ -49,15 +49,21 @@ module "deejay" {
 
   # x86_64: cryptography, cffi and rpds-py ship compiled wheels the deploy
   # builds for x86_64-manylinux_2_17.
-  handler         = "deejay_cog.worker.lambda_handler"
-  architecture    = "x86_64"
-  timeout_seconds = 900 # not yet measured; lower it once the slowest run is known
+  handler      = "deejay_cog.worker.lambda_handler"
+  architecture = "x86_64"
+
+  # The slowest run in four weeks was about 34s. A failing job holds the
+  # FIFO queue for up to max_receive_count x (timeout + 60s), so this is
+  # kept near what runs take rather than at Lambda's 900s ceiling.
+  timeout_seconds = 300
   memory_mb       = 1024
 
   # Serialised: two sweeps of one Drive folder race to upload and archive
-  # the same files. 5 receives because a burst can throttle a good message.
+  # the same files. FIFO with one message group, so jobs queue without
+  # being throttled; 3 receives is then three real failures.
+  fifo                 = true
   reserved_concurrency = 1
-  max_receive_count    = 5
+  max_receive_count    = 3
 
   environment = {
     SPOTIPY_REDIRECT_URI  = "http://127.0.0.1:8888/callback"
@@ -87,14 +93,18 @@ module "transcription" {
   alert_email              = local.alert_email
   api_base_url             = var.kaiano_api_base_url
 
-  handler         = "transcription_cog.worker.lambda_handler"
-  architecture    = "arm64"
-  timeout_seconds = 900
+  handler      = "transcription_cog.worker.lambda_handler"
+  architecture = "arm64"
+
+  # The slowest run in four weeks was about 2.4 min; long audio is what
+  # takes time, so this keeps generous headroom below Lambda's 900s.
+  timeout_seconds = 600
   memory_mb       = 512
 
-  # One file per job, serialised.
+  # One file per job, serialised. FIFO with one message group, as deejay.
+  fifo                 = true
   reserved_concurrency = 1
-  max_receive_count    = 5
+  max_receive_count    = 3
 
   ssm_parameters = {
     ANTHROPIC_API_KEY                  = "ANTHROPIC_API_KEY"

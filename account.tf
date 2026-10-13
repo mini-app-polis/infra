@@ -80,12 +80,15 @@ resource "aws_iam_user" "producer" {
 }
 
 data "aws_iam_policy_document" "producer" {
-  # Send, and nothing else, to any `*-jobs` queue in this account. A new
-  # cog's queue is covered the moment it exists. The key can cause work to
-  # happen; it cannot read, drain or dead-letter anything.
+  # Send, and nothing else, to any `*-jobs` queue in this account, standard
+  # or FIFO. A new cog's queue is covered the moment it exists. The key can
+  # cause work to happen; it cannot read, drain or dead-letter anything.
   statement {
-    actions   = ["sqs:SendMessage"]
-    resources = ["arn:aws:sqs:${var.region}:${data.aws_caller_identity.current.account_id}:*-jobs"]
+    actions = ["sqs:SendMessage"]
+    resources = [
+      "arn:aws:sqs:${var.region}:${data.aws_caller_identity.current.account_id}:*-jobs",
+      "arn:aws:sqs:${var.region}:${data.aws_caller_identity.current.account_id}:*-jobs.fifo",
+    ]
   }
 
   # The same key publishes the API's request metrics (common-python-utils
