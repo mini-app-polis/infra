@@ -142,6 +142,17 @@ module "watcher" {
 
   schedule_interval_seconds = 60
 
+  # One invocation per folder every minute, so a slow or failing folder
+  # cannot spend the others' 50s or fail their tick. The names are
+  # watcher-cog's get_watchers() names; an unknown one fails its invocation
+  # loudly rather than watching nothing. All four ping the one Healthchecks
+  # check, which only catches the schedule stopping; the error alarm below
+  # is what notices a single folder failing.
+  schedule_targets = {
+    for name in ["dj-sets", "live-history", "wcs-notes", "voice-notes"] :
+    name => { watcher = name }
+  }
+
   # Ten failed ticks in a row, not 3 of 5: an API deploy or restart fails a
   # few ticks and the next tick catches up, so only a sustained failure pages.
   error_alarm_window    = 10

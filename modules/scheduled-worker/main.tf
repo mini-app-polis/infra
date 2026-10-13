@@ -156,9 +156,21 @@ resource "aws_cloudwatch_event_rule" "schedule" {
   tags = local.tags
 }
 
+# One target per entry in schedule_targets, all on the one rule, so every
+# entry is invoked on every tick in its own invocation. The default entry
+# keeps the original single target, with no event, and its generated id.
 resource "aws_cloudwatch_event_target" "schedule" {
-  rule = aws_cloudwatch_event_rule.schedule.name
-  arn  = aws_lambda_function.worker.arn
+  for_each = var.schedule_targets
+
+  rule      = aws_cloudwatch_event_rule.schedule.name
+  arn       = aws_lambda_function.worker.arn
+  target_id = each.key == "default" ? null : "${var.name}-${each.key}"
+  input     = length(each.value) == 0 ? null : jsonencode(each.value)
+}
+
+moved {
+  from = aws_cloudwatch_event_target.schedule
+  to   = aws_cloudwatch_event_target.schedule["default"]
 }
 
 resource "aws_lambda_permission" "schedule" {
