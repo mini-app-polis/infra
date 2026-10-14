@@ -19,6 +19,10 @@
 #
 # Registration, renewal and transfer stay in the dashboard: the registrar
 # is not something Terraform should be able to give away.
+#
+# Out of scope by decision: the swingesota Workers (swingesota-api,
+# swingesota-api-ro) and their Hyperdrive config (swingesota-hd). They share
+# this account but are not part of this platform.
 
 locals {
   # Zone name → zone ID. The IDs are what the imports adopt; the names are
