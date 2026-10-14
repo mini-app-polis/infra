@@ -5,10 +5,11 @@
 # date) are not managed here: Doppler syncs the variables, most of them are
 # secrets the API never returns, and the provider cannot import a project
 # that has any. The five projects with secret variables are therefore not
-# here yet — website-astro-wcs, deejaytools-com, website-astro-wcsmn,
-# website-swingtacular and website-astro-swingtacular — and join once their
-# build secrets are narrowed to what each site actually reads. Their custom
-# domains are managed below regardless.
+# here: website-astro-wcs, deejaytools-com and website-astro-wcsmn now have
+# plain-text variables only and are managed in full in
+# cloudflare_pages_sites.tf; website-swingtacular and
+# website-astro-swingtacular keep a build secret and stay out. Every
+# project's custom domains are managed below regardless.
 #
 # Deployments themselves come from the Git integration; nothing here
 # triggers one.
