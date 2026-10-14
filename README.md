@@ -120,7 +120,7 @@ Turnstile. (Bulk redirect lists are read through Account Filter Lists;
 Bulk URL Redirects alone is not enough.)
 
 Zone permissions, on all zones in the account: Zone, Zone Settings, DNS,
-Zone WAF, Single Redirect, Workers Routes.
+Zone WAF, Single Redirect, Workers Routes, Bot Management.
 
 Registration, renewal and transfer stay in the dashboard and are in
 neither token.
