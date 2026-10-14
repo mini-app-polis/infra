@@ -15,9 +15,24 @@ locals {
 resource "cloudflare_bot_management" "api_zones" {
   for_each = local.cloudflare_api_zones
 
-  zone_id            = cloudflare_zone.this[each.key].id
-  fight_mode         = false
-  ai_bots_protection = "block"
+  zone_id               = cloudflare_zone.this[each.key].id
+  fight_mode            = false
+  is_robots_txt_managed = true
+
+  # The AI-crawler settings belong to AI Crawl Control in the dashboard. The
+  # API won't take ai_bots_protection through this resource (a "block" comes
+  # back as "disabled"), so Terraform leaves these fields alone.
+  lifecycle {
+    ignore_changes = [
+      ai_bots_protection,
+      ai_bots_migration_opt_out,
+      ai_training,
+      ai_user,
+      aisearch,
+      content_bots_protection,
+      crawler_protection,
+    ]
+  }
 }
 
 import {
