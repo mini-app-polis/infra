@@ -1,8 +1,13 @@
-# The three Pages sites whose build variables Terraform owns. Unlike the
-# projects in cloudflare_pages.tf, their deployment settings are managed
-# here in full: every variable is plain text (each ends up in the browser
-# bundle anyway), so nothing has to stay outside Terraform. Changing one is
-# a pull request; the next build of the site picks it up.
+# The three Pages sites whose build variables Terraform owns.
+#
+# Doppler is where every value is edited. It syncs to this repository's
+# Actions secrets, and the workflow passes each one in as TF_VAR_<name>, so a
+# value keeps one name from Doppler to the build. Each variable below is
+# named for what the site's build reads and is plain text: all of them end
+# up in the browser bundle, so none is a secret.
+#
+# Production and preview differ only in the API they point at (and the
+# Clerk instance behind deejaytools' dev API).
 
 locals {
   cloudflare_pages_sites = {
@@ -13,14 +18,14 @@ locals {
       compatibility_date  = "2026-03-30"
       compatibility_flags = []
       production_env = {
-        VITE_API_URL               = "https://api.deejaytools.com"
-        VITE_CLERK_PUBLISHABLE_KEY = var.deejaytools_clerk_publishable_key
-        VITE_SENTRY_DSN            = var.deejaytools_sentry_dsn
+        DEEJAYTOOLS_API                   = var.DEEJAYTOOLS_API
+        DEEJAYTOOLS_CLERK_PUBLISHABLE_KEY = var.DEEJAYTOOLS_CLERK_PUBLISHABLE_KEY
+        SENTRY_DSN_DEEJAYTOOLS            = var.SENTRY_DSN_DEEJAYTOOLS
       }
       preview_env = {
-        VITE_API_URL               = "https://api-dev.deejaytools.com"
-        VITE_CLERK_PUBLISHABLE_KEY = var.deejaytools_clerk_publishable_key_preview
-        VITE_SENTRY_DSN            = var.deejaytools_sentry_dsn
+        DEEJAYTOOLS_API_DEV               = var.DEEJAYTOOLS_API_DEV
+        DEEJAYTOOLS_CLERK_PUBLISHABLE_KEY = var.DEEJAYTOOLS_CLERK_PUBLISHABLE_KEY_DEV
+        SENTRY_DSN_DEEJAYTOOLS            = var.SENTRY_DSN_DEEJAYTOOLS
       }
     }
     "website-astro-wcs" = {
@@ -30,12 +35,12 @@ locals {
       compatibility_date  = "2024-09-23"
       compatibility_flags = ["nodejs_compat"]
       production_env = {
-        KAIANO_API_BASE_URL       = "https://api.kaianolevine.com"
-        PUBLIC_TURNSTILE_SITE_KEY = cloudflare_turnstile_widget.kaiano_api.sitekey
+        KAIANO_API_BASE_URL       = var.KAIANO_API_BASE_URL
+        PUBLIC_TURNSTILE_SITE_KEY = var.PUBLIC_TURNSTILE_SITE_KEY
       }
       preview_env = {
-        KAIANO_API_BASE_URL       = "https://dev-api.kaianolevine.com"
-        PUBLIC_TURNSTILE_SITE_KEY = cloudflare_turnstile_widget.kaiano_api.sitekey
+        KAIANO_API_BASE_URL       = var.KAIANO_API_BASE_URL_DEV
+        PUBLIC_TURNSTILE_SITE_KEY = var.PUBLIC_TURNSTILE_SITE_KEY
       }
     }
     "website-astro-wcsmn" = {
@@ -45,12 +50,10 @@ locals {
       compatibility_date  = "2026-06-17"
       compatibility_flags = []
       production_env = {
-        PUBLIC_API_URL                 = "https://api.kaianolevine.com"
-        PUBLIC_GOOGLE_CALENDAR_API_KEY = var.wcsmn_google_calendar_api_key
+        GOOGLE_CALENDAR_PUBLIC_API_KEY = var.GOOGLE_CALENDAR_PUBLIC_API_KEY
       }
       preview_env = {
-        PUBLIC_API_URL                 = "https://dev-api.kaianolevine.com"
-        PUBLIC_GOOGLE_CALENDAR_API_KEY = var.wcsmn_google_calendar_api_key
+        GOOGLE_CALENDAR_PUBLIC_API_KEY = var.GOOGLE_CALENDAR_PUBLIC_API_KEY
       }
     }
   }
@@ -101,8 +104,19 @@ resource "cloudflare_pages_project" "site" {
   }
 }
 
-import {
-  for_each = local.cloudflare_pages_sites
-  to       = cloudflare_pages_project.site[each.key]
-  id       = "${var.cloudflare_account_id}/${each.key}"
+# Back from cloudflare_pages_project.this, where they briefly sat with
+# their variables left to the dashboard.
+moved {
+  from = cloudflare_pages_project.this["deejaytools-com"]
+  to   = cloudflare_pages_project.site["deejaytools-com"]
+}
+
+moved {
+  from = cloudflare_pages_project.this["website-astro-wcs"]
+  to   = cloudflare_pages_project.site["website-astro-wcs"]
+}
+
+moved {
+  from = cloudflare_pages_project.this["website-astro-wcsmn"]
+  to   = cloudflare_pages_project.site["website-astro-wcsmn"]
 }

@@ -28,26 +28,51 @@ variable "cloudflare_account_id" {
   default     = "0314578fe75f14199c748d0065583f93"
 }
 
-# Build-time values for the Pages sites. Public by design — each is baked
-# into the JavaScript every visitor downloads — but edited in Doppler, which
-# syncs them to this repository's Actions secrets; the workflow passes them
-# in as TF_VAR_*.
-variable "deejaytools_clerk_publishable_key" {
-  description = "deejaytools-com production Clerk publishable key (pk_live_…)."
+# Pages build values (cloudflare_pages_sites.tf), named as in Doppler. Public
+# by design — each is baked into a site's browser bundle — but edited in
+# Doppler and passed in by the workflow as TF_VAR_<name>.
+
+variable "DEEJAYTOOLS_API" {
+  description = "deejaytools API base URL, for production builds."
   type        = string
 }
 
-variable "deejaytools_clerk_publishable_key_preview" {
-  description = "deejaytools-com preview Clerk publishable key; the production key again if preview uses the same instance."
+variable "DEEJAYTOOLS_API_DEV" {
+  description = "deejaytools dev API base URL, for preview builds."
   type        = string
 }
 
-variable "deejaytools_sentry_dsn" {
-  description = "deejaytools-com browser Sentry DSN."
+variable "DEEJAYTOOLS_CLERK_PUBLISHABLE_KEY" {
+  description = "deejaytools production Clerk publishable key (pk_live_…)."
   type        = string
 }
 
-variable "wcsmn_google_calendar_api_key" {
-  description = "website-astro-wcsmn Google Calendar API key. Referrer-restricted in Google Cloud."
+variable "DEEJAYTOOLS_CLERK_PUBLISHABLE_KEY_DEV" {
+  description = "deejaytools dev Clerk instance's publishable key (pk_test_…), for preview builds."
+  type        = string
+}
+
+variable "SENTRY_DSN_DEEJAYTOOLS" {
+  description = "deejaytools browser Sentry DSN."
+  type        = string
+}
+
+variable "KAIANO_API_BASE_URL" {
+  description = "api-kaianolevine-com base URL, for production builds."
+  type        = string
+}
+
+variable "KAIANO_API_BASE_URL_DEV" {
+  description = "api-kaianolevine-com dev base URL, for preview builds."
+  type        = string
+}
+
+variable "PUBLIC_TURNSTILE_SITE_KEY" {
+  description = "Turnstile site key for the kaiano-api widget."
+  type        = string
+}
+
+variable "GOOGLE_CALENDAR_PUBLIC_API_KEY" {
+  description = "wcsmn Google Calendar API key; referrer-restricted in Google Cloud."
   type        = string
 }

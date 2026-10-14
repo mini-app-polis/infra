@@ -40,10 +40,15 @@ jobs:
     # Read-only: a pull request's plan can see Cloudflare but change nothing.
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_READ }}
-      TF_VAR_deejaytools_clerk_publishable_key: ${{ secrets.DEEJAYTOOLS_CLERK_PUBLISHABLE_KEY }}
-      TF_VAR_deejaytools_clerk_publishable_key_preview: ${{ secrets.DEEJAYTOOLS_CLERK_PUBLISHABLE_KEY_PREVIEW }}
-      TF_VAR_deejaytools_sentry_dsn: ${{ secrets.DEEJAYTOOLS_SENTRY_DSN }}
-      TF_VAR_wcsmn_google_calendar_api_key: ${{ secrets.WCSMN_GOOGLE_CALENDAR_API_KEY }}
+      TF_VAR_DEEJAYTOOLS_API: ${{ secrets.DEEJAYTOOLS_API }}
+      TF_VAR_DEEJAYTOOLS_API_DEV: ${{ secrets.DEEJAYTOOLS_API_DEV }}
+      TF_VAR_DEEJAYTOOLS_CLERK_PUBLISHABLE_KEY: ${{ secrets.DEEJAYTOOLS_CLERK_PUBLISHABLE_KEY }}
+      TF_VAR_DEEJAYTOOLS_CLERK_PUBLISHABLE_KEY_DEV: ${{ secrets.DEEJAYTOOLS_CLERK_PUBLISHABLE_KEY_DEV }}
+      TF_VAR_SENTRY_DSN_DEEJAYTOOLS: ${{ secrets.SENTRY_DSN_DEEJAYTOOLS }}
+      TF_VAR_KAIANO_API_BASE_URL: ${{ secrets.KAIANO_API_BASE_URL }}
+      TF_VAR_KAIANO_API_BASE_URL_DEV: ${{ secrets.KAIANO_API_BASE_URL_DEV }}
+      TF_VAR_PUBLIC_TURNSTILE_SITE_KEY: ${{ secrets.PUBLIC_TURNSTILE_SITE_KEY }}
+      TF_VAR_GOOGLE_CALENDAR_PUBLIC_API_KEY: ${{ secrets.GOOGLE_CALENDAR_PUBLIC_API_KEY }}
     permissions:
       contents: read
       id-token: write
@@ -159,10 +164,15 @@ jobs:
     # can read it.
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      TF_VAR_deejaytools_clerk_publishable_key: ${{ secrets.DEEJAYTOOLS_CLERK_PUBLISHABLE_KEY }}
-      TF_VAR_deejaytools_clerk_publishable_key_preview: ${{ secrets.DEEJAYTOOLS_CLERK_PUBLISHABLE_KEY_PREVIEW }}
-      TF_VAR_deejaytools_sentry_dsn: ${{ secrets.DEEJAYTOOLS_SENTRY_DSN }}
-      TF_VAR_wcsmn_google_calendar_api_key: ${{ secrets.WCSMN_GOOGLE_CALENDAR_API_KEY }}
+      TF_VAR_DEEJAYTOOLS_API: ${{ secrets.DEEJAYTOOLS_API }}
+      TF_VAR_DEEJAYTOOLS_API_DEV: ${{ secrets.DEEJAYTOOLS_API_DEV }}
+      TF_VAR_DEEJAYTOOLS_CLERK_PUBLISHABLE_KEY: ${{ secrets.DEEJAYTOOLS_CLERK_PUBLISHABLE_KEY }}
+      TF_VAR_DEEJAYTOOLS_CLERK_PUBLISHABLE_KEY_DEV: ${{ secrets.DEEJAYTOOLS_CLERK_PUBLISHABLE_KEY_DEV }}
+      TF_VAR_SENTRY_DSN_DEEJAYTOOLS: ${{ secrets.SENTRY_DSN_DEEJAYTOOLS }}
+      TF_VAR_KAIANO_API_BASE_URL: ${{ secrets.KAIANO_API_BASE_URL }}
+      TF_VAR_KAIANO_API_BASE_URL_DEV: ${{ secrets.KAIANO_API_BASE_URL_DEV }}
+      TF_VAR_PUBLIC_TURNSTILE_SITE_KEY: ${{ secrets.PUBLIC_TURNSTILE_SITE_KEY }}
+      TF_VAR_GOOGLE_CALENDAR_PUBLIC_API_KEY: ${{ secrets.GOOGLE_CALENDAR_PUBLIC_API_KEY }}
     permissions:
       contents: read
       id-token: write
