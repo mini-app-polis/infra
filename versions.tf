@@ -13,6 +13,10 @@ terraform {
       source  = "hashicorp/archive"
       version = "~> 2.4"
     }
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 5.20"
+    }
   }
 }
 
@@ -27,3 +31,8 @@ provider "aws" {
     }
   }
 }
+
+# The token comes from CLOUDFLARE_API_TOKEN in the environment, never from
+# configuration: a read-only token in the plan job, an edit token in the
+# apply job (see .github/workflows/terraform.yml and cloudflare.tf).
+provider "cloudflare" {}

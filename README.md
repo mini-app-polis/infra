@@ -103,6 +103,26 @@ terraform apply tfplan
 Commit whatever that applied to `main` straight after, through a pull
 request, or the next CI apply will undo it.
 
+## Cloudflare
+
+Every zone is managed here (`cloudflare.tf`). CI authenticates with two
+API tokens (My Profile → API Tokens → Create custom token), minted by hand
+and kept in Doppler:
+
+| Secret | Where | Permissions |
+| --- | --- | --- |
+| `CLOUDFLARE_API_TOKEN_READ` | repository secret, plan job | every permission below at **Read** |
+| `CLOUDFLARE_API_TOKEN` | `production` environment secret, apply job | every permission below at **Write** (Account Settings stays Read) |
+
+Account permissions: Account Settings, Account Rulesets, Bulk URL
+Redirects, Cloudflare Pages, Workers Scripts, Hyperdrive, Turnstile.
+
+Zone permissions, on all zones in the account: Zone, Zone Settings, DNS,
+Zone WAF, Single Redirect, Workers Routes.
+
+Registration, renewal and transfer stay in the dashboard and are in
+neither token.
+
 ## Why Terraform, not CloudFormation/SAM/CDK
 
 CloudFormation would hold state for us and roll failed updates back

@@ -37,6 +37,9 @@ env:
 jobs:
   plan:
     runs-on: ubuntu-latest
+    # Read-only: a pull request's plan can see Cloudflare but change nothing.
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_READ }}
     permissions:
       contents: read
       id-token: write
@@ -148,6 +151,10 @@ jobs:
     concurrency:
       group: terraform-apply
       cancel-in-progress: false
+    # Edit token, held as a `production` environment secret so no other job
+    # can read it.
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     permissions:
       contents: read
       id-token: write

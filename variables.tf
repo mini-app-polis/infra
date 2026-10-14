@@ -21,3 +21,9 @@ variable "budget_limit_usd" {
   type        = number
   default     = 10
 }
+
+variable "cloudflare_account_id" {
+  description = "The Cloudflare account every zone, Pages project and Worker lives in. Not a secret: it appears in every dashboard URL and does nothing without a token."
+  type        = string
+  default     = "0314578fe75f14199c748d0065583f93"
+}
