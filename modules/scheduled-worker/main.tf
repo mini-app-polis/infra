@@ -97,9 +97,12 @@ resource "aws_lambda_function" "worker" {
   timeout     = var.timeout_seconds
   memory_size = var.memory_mb
 
-  # One tick at a time. Two overlapping ticks are harmless — the API's
-  # claims make the second a no-op — but they are never useful.
-  reserved_concurrent_executions = 1
+  # One slot per schedule target. Every target fires on the same tick, so a
+  # smaller reservation throttles the rest, serialises them behind the
+  # first, and drops any still waiting when maximum_event_age runs out —
+  # undoing the fan-out. Overlap with a slow previous tick is harmless: the
+  # API's claims make the second ask a no-op.
+  reserved_concurrent_executions = length(var.schedule_targets)
 
   environment {
     variables = merge(
@@ -134,8 +137,11 @@ resource "aws_lambda_function" "worker" {
 # A scheduled invocation is asynchronous, and Lambda retries a failed or
 # throttled async event for up to six hours by default. Here the next tick
 # is the retry: a stale tick replayed later only duplicates it, and a
-# backlog of them behind a reservation of one would crowd out the current
-# one. So: no retries, and an event older than one interval is dropped.
+# backlog of them would crowd out the current one. So: no retries, and an
+# event older than one interval is dropped. maximum_retry_attempts covers
+# function errors only; a throttled event is retried until its age runs
+# out, which is why the reservation above matches the target count. A
+# drop shows as AsyncEventsDropped on the services dashboard.
 resource "aws_lambda_function_event_invoke_config" "worker" {
   function_name                = aws_lambda_function.worker.function_name
   maximum_retry_attempts       = 0
