@@ -3,7 +3,7 @@
 # cost. The API rows are custom metrics published by common-python-utils'
 # request_metrics middleware (MiniAppPolis/Api) and billed per metric.
 # Dashboards are free up to three per account at 50 metrics each; this one
-# references about 40.
+# references about 42.
 #
 # Built from the cog modules, so a cog added to cogs.tf and to the maps
 # below gets its row; an API gets its row by being added to
@@ -244,6 +244,26 @@ locals {
             ["AWS/Lambda", "Duration", "FunctionName", local.dashboard_scheduled_cogs[name].function_name, { stat = "p50", label = "p50" }],
             ["...", { stat = "p95", label = "p95" }],
             ["...", { stat = "p99", label = "p99" }],
+          ]
+        }
+      },
+      {
+        # A scheduled tick that never ran: throttled or delayed past the
+        # function's maximum event age. Invisible to the errors alarm and to
+        # Healthchecks, which any other target's tick still pings.
+        type   = "metric"
+        x      = 12
+        y      = local.scheduled_rows_top + i * local.dashboard_row_height
+        width  = 6
+        height = local.dashboard_row_height
+        properties = {
+          title  = "${name}: dropped ticks"
+          region = var.region
+          view   = "timeSeries"
+          period = 3600
+          metrics = [
+            ["AWS/Lambda", "AsyncEventsDropped", "FunctionName", local.dashboard_scheduled_cogs[name].function_name, { stat = "Sum", label = "dropped", color = "#d62728" }],
+            [".", "AsyncEventAge", ".", ".", { stat = "Maximum", label = "oldest wait (ms)", yAxis = "right" }],
           ]
         }
       },
