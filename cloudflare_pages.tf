@@ -1,15 +1,11 @@
 # Cloudflare Pages: the static sites and their custom domains.
 #
 # Terraform owns each project's build settings and Git connection, and every
-# custom domain. Deployment settings (environment variables, compatibility
-# date) are set in the dashboard, not here: the provider writes preview
-# variables but leaves production values empty, so a production build would
-# ship without them. Every variable these sites read is public — it ends up
-# in the browser bundle — so none of them needs a secret store.
-#
-# website-swingtacular and website-astro-swingtacular keep a build secret,
-# which the provider cannot import, and stay out. Their custom domains are
-# managed below regardless.
+# custom domain. For the projects below, deployment settings (variables,
+# compatibility date) are not managed: they have none that matter, or (the
+# two swingtacular projects, not here at all) keep a build secret the
+# provider cannot import. The sites whose build variables Terraform does own
+# are in cloudflare_pages_sites.tf.
 #
 # Deployments themselves come from the Git integration; nothing here
 # triggers one.
@@ -22,14 +18,6 @@ locals {
       repo_name       = "bameo-wcs"
       repo_id         = "1261618080"
       build_command   = "npm run build"
-      destination_dir = "dist"
-    }
-    "deejaytools-com" = {
-      owner           = "mini-app-polis"
-      owner_id        = "270520182"
-      repo_name       = "deejaytools-com"
-      repo_id         = "1195655361"
-      build_command   = "pnpm install && pnpm build"
       destination_dir = "dist"
     }
     "capital-swing-convention" = {
@@ -64,26 +52,10 @@ locals {
       build_command   = "npm run build"
       destination_dir = "dist"
     }
-    "website-astro-wcs" = {
-      owner           = "mini-app-polis"
-      owner_id        = "270520182"
-      repo_name       = "website-astro-wcs"
-      repo_id         = "1192108883"
-      build_command   = "npm run build"
-      destination_dir = "dist"
-    }
-    "website-astro-wcsmn" = {
-      owner           = "mini-app-polis"
-      owner_id        = "270520182"
-      repo_name       = "website-astro-wcsmn"
-      repo_id         = "1272498043"
-      build_command   = "npm run build"
-      destination_dir = "dist"
-    }
   }
 
   # Custom domain → the Pages project serving it, for every project in the
-  # account, managed or not yet.
+  # account.
   cloudflare_pages_domains = {
     "deejaytools.com"               = "deejaytools-com"
     "dev.deejaytools.com"           = "deejaytools-com"
@@ -147,18 +119,3 @@ resource "cloudflare_pages_domain" "this" {
   name         = each.key
 }
 
-# The three sites briefly had their own resource with managed variables.
-moved {
-  from = cloudflare_pages_project.site["deejaytools-com"]
-  to   = cloudflare_pages_project.this["deejaytools-com"]
-}
-
-moved {
-  from = cloudflare_pages_project.site["website-astro-wcs"]
-  to   = cloudflare_pages_project.this["website-astro-wcs"]
-}
-
-moved {
-  from = cloudflare_pages_project.site["website-astro-wcsmn"]
-  to   = cloudflare_pages_project.this["website-astro-wcsmn"]
-}
