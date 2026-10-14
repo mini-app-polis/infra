@@ -17,6 +17,10 @@ terraform {
       source  = "cloudflare/cloudflare"
       version = "~> 5.20"
     }
+    doppler = {
+      source  = "DopplerHQ/doppler"
+      version = "~> 1.0"
+    }
   }
 }
 
@@ -36,3 +40,8 @@ provider "aws" {
 # configuration: a read-only token in the plan job, an edit token in the
 # apply job (see .github/workflows/terraform.yml and cloudflare.tf).
 provider "cloudflare" {}
+
+# Read-only. The token comes from DOPPLER_TOKEN in the environment: a
+# service token scoped to the one Doppler config the Pages sites read from
+# (see cloudflare_pages_sites.tf).
+provider "doppler" {}
