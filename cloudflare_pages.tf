@@ -103,9 +103,7 @@ resource "cloudflare_pages_project" "this" {
       production_deployments_enabled = true
       preview_deployment_setting     = "all"
       preview_branch_includes        = ["*"]
-      preview_branch_excludes        = []
       path_includes                  = ["*"]
-      path_excludes                  = []
     }
   }
 
