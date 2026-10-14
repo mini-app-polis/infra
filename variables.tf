@@ -27,3 +27,27 @@ variable "cloudflare_account_id" {
   type        = string
   default     = "0314578fe75f14199c748d0065583f93"
 }
+
+# Build-time values for the Pages sites. Public by design — each is baked
+# into the JavaScript every visitor downloads — but edited in Doppler, which
+# syncs them to this repository's Actions secrets; the workflow passes them
+# in as TF_VAR_*.
+variable "deejaytools_clerk_publishable_key" {
+  description = "deejaytools-com production Clerk publishable key (pk_live_…)."
+  type        = string
+}
+
+variable "deejaytools_clerk_publishable_key_preview" {
+  description = "deejaytools-com preview Clerk publishable key; the production key again if preview uses the same instance."
+  type        = string
+}
+
+variable "deejaytools_sentry_dsn" {
+  description = "deejaytools-com browser Sentry DSN."
+  type        = string
+}
+
+variable "wcsmn_google_calendar_api_key" {
+  description = "website-astro-wcsmn Google Calendar API key. Referrer-restricted in Google Cloud."
+  type        = string
+}

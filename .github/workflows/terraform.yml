@@ -40,6 +40,10 @@ jobs:
     # Read-only: a pull request's plan can see Cloudflare but change nothing.
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_READ }}
+      TF_VAR_deejaytools_clerk_publishable_key: ${{ secrets.DEEJAYTOOLS_CLERK_PUBLISHABLE_KEY }}
+      TF_VAR_deejaytools_clerk_publishable_key_preview: ${{ secrets.DEEJAYTOOLS_CLERK_PUBLISHABLE_KEY_PREVIEW }}
+      TF_VAR_deejaytools_sentry_dsn: ${{ secrets.DEEJAYTOOLS_SENTRY_DSN }}
+      TF_VAR_wcsmn_google_calendar_api_key: ${{ secrets.WCSMN_GOOGLE_CALENDAR_API_KEY }}
     permissions:
       contents: read
       id-token: write
@@ -155,6 +159,10 @@ jobs:
     # can read it.
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      TF_VAR_deejaytools_clerk_publishable_key: ${{ secrets.DEEJAYTOOLS_CLERK_PUBLISHABLE_KEY }}
+      TF_VAR_deejaytools_clerk_publishable_key_preview: ${{ secrets.DEEJAYTOOLS_CLERK_PUBLISHABLE_KEY_PREVIEW }}
+      TF_VAR_deejaytools_sentry_dsn: ${{ secrets.DEEJAYTOOLS_SENTRY_DSN }}
+      TF_VAR_wcsmn_google_calendar_api_key: ${{ secrets.WCSMN_GOOGLE_CALENDAR_API_KEY }}
     permissions:
       contents: read
       id-token: write
