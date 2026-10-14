@@ -18,7 +18,7 @@ resource "cloudflare_ruleset" "deejaytools_com_rate_limit" {
       description = "api-per-ip-burst"
       expression  = "   (http.host eq \"api.deejaytools.com\")"
       action      = "block"
-      ratelimit   = {
+      ratelimit = {
         characteristics     = ["ip.src", "cf.colo.id"]
         period              = 10
         requests_per_period = 50
@@ -58,7 +58,7 @@ resource "cloudflare_ruleset" "kaianolevine_com_rate_limit" {
       description = "api-per-ip-burst"
       expression  = "(http.host eq \"api.kaianolevine.com\")"
       action      = "block"
-      ratelimit   = {
+      ratelimit = {
         characteristics     = ["ip.src", "cf.colo.id"]
         period              = 10
         requests_per_period = 50
@@ -77,15 +77,15 @@ resource "cloudflare_ruleset" "kaianolevine_com_redirect" {
 
   rules = [
     {
-      ref               = "c457627d66ee4613a7bca34d43a9ad2b"
-      description       = "kaianolevine -> wcs.kaianolevine"
-      expression        = "(http.host eq \"kaianolevine.com\" or http.host eq \"www.kaianolevine.com\")\nand (http.request.uri.path ne \"/\")\nand not (\n  starts_with(http.request.uri.path, \"/assets/\")\n  or http.request.uri.path eq \"/favicon.ico\"\n  or http.request.uri.path eq \"/favicon.png\"\n  or http.request.uri.path eq \"/favicon-96x96.png\"\n  or http.request.uri.path eq \"/favicon.svg\"\n  or starts_with(http.request.uri.path, \"/favicon\")\n  or starts_with(http.request.uri.path, \"/apple-touch-icon\")\n  or http.request.uri.path eq \"/site.webmanifest\"\n  or http.request.uri.path eq \"/robots.txt\"\n  or starts_with(http.request.uri.path, \"/sitemap\")\n  or starts_with(http.request.uri.path, \"/cdn-cgi/\")\n)"
-      action            = "redirect"
+      ref         = "c457627d66ee4613a7bca34d43a9ad2b"
+      description = "kaianolevine -> wcs.kaianolevine"
+      expression  = "(http.host eq \"kaianolevine.com\" or http.host eq \"www.kaianolevine.com\")\nand (http.request.uri.path ne \"/\")\nand not (\n  starts_with(http.request.uri.path, \"/assets/\")\n  or http.request.uri.path eq \"/favicon.ico\"\n  or http.request.uri.path eq \"/favicon.png\"\n  or http.request.uri.path eq \"/favicon-96x96.png\"\n  or http.request.uri.path eq \"/favicon.svg\"\n  or starts_with(http.request.uri.path, \"/favicon\")\n  or starts_with(http.request.uri.path, \"/apple-touch-icon\")\n  or http.request.uri.path eq \"/site.webmanifest\"\n  or http.request.uri.path eq \"/robots.txt\"\n  or starts_with(http.request.uri.path, \"/sitemap\")\n  or starts_with(http.request.uri.path, \"/cdn-cgi/\")\n)"
+      action      = "redirect"
       action_parameters = {
         from_value = {
           status_code           = 301
           preserve_query_string = true
-          target_url            = {
+          target_url = {
             expression = "concat(\"https://wcs.kaianolevine.com\", http.request.uri.path)"
           }
         }
@@ -124,7 +124,7 @@ resource "cloudflare_ruleset" "mnmusicmovement_com_rate_limit" {
       description = "Leaked credential check"
       expression  = "(cf.waf.credential_check.password_leaked)"
       action      = "block"
-      ratelimit   = {
+      ratelimit = {
         characteristics     = ["ip.src", "cf.colo.id"]
         period              = 10
         requests_per_period = 5
@@ -147,7 +147,7 @@ resource "cloudflare_ruleset" "swingtacular_art_rate_limit" {
       description = "Leaked credential check"
       expression  = "(cf.waf.credential_check.password_leaked)"
       action      = "block"
-      ratelimit   = {
+      ratelimit = {
         characteristics     = ["ip.src", "cf.colo.id"]
         period              = 10
         requests_per_period = 5
@@ -167,10 +167,10 @@ resource "cloudflare_ruleset" "account_bulk_redirect" {
 
   rules = [
     {
-      ref               = "c2d32b71e7bd443688c8e619d6ea0b91"
-      description       = "wcsmn"
-      expression        = "http.request.full_uri in $wcsmn_com"
-      action            = "redirect"
+      ref         = "c2d32b71e7bd443688c8e619d6ea0b91"
+      description = "wcsmn"
+      expression  = "http.request.full_uri in $wcsmn_com"
+      action      = "redirect"
       action_parameters = {
         from_list = {
           name = "wcsmn_com"
@@ -180,10 +180,10 @@ resource "cloudflare_ruleset" "account_bulk_redirect" {
       enabled = true
     },
     {
-      ref               = "42ef446482fd44049d7320394cc684fb"
-      description       = "kaianolevine_com"
-      expression        = "http.request.full_uri in $kaianolevine"
-      action            = "redirect"
+      ref         = "42ef446482fd44049d7320394cc684fb"
+      description = "kaianolevine_com"
+      expression  = "http.request.full_uri in $kaianolevine"
+      action      = "redirect"
       action_parameters = {
         from_list = {
           name = "kaianolevine"
@@ -193,10 +193,10 @@ resource "cloudflare_ruleset" "account_bulk_redirect" {
       enabled = true
     },
     {
-      ref               = "9e9b0c22162d49449891b72de54add39"
-      description       = "swingtacular"
-      expression        = "http.request.full_uri in $swingtacular"
-      action            = "redirect"
+      ref         = "9e9b0c22162d49449891b72de54add39"
+      description = "swingtacular"
+      expression  = "http.request.full_uri in $swingtacular"
+      action      = "redirect"
       action_parameters = {
         from_list = {
           name = "swingtacular"
@@ -206,10 +206,10 @@ resource "cloudflare_ruleset" "account_bulk_redirect" {
       enabled = true
     },
     {
-      ref               = "a4cb35f4c4c743e4890e0d2c863fcfa9"
-      description       = "dancegeekproductions"
-      expression        = "http.request.full_uri in $dancegeekproductions"
-      action            = "redirect"
+      ref         = "a4cb35f4c4c743e4890e0d2c863fcfa9"
+      description = "dancegeekproductions"
+      expression  = "http.request.full_uri in $dancegeekproductions"
+      action      = "redirect"
       action_parameters = {
         from_list = {
           name = "dancegeekproductions"
