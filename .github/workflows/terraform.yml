@@ -1,4 +1,5 @@
-# Plan on every pull request; plan and apply on every merge to main.
+# Plan on every pull request; plan and apply on every merge to main, or on
+# a manual run from main (Actions → terraform → Run workflow).
 #
 #   pull request → plan      infra-plan (read-only), -lock=false; the plan
 #                            is the job summary
@@ -25,6 +26,10 @@ on:
     types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
     branches: [main]
+  # Re-apply main by hand, e.g. after a Doppler change: Terraform reads the
+  # Pages build variables from Doppler only when it runs, so a new value
+  # reaches Pages on the next apply, not when it is saved in Doppler.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -141,7 +146,7 @@ jobs:
 
   apply:
     needs: plan
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.plan.outputs.changes == 'true'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && needs.plan.outputs.changes == 'true'
     runs-on: ubuntu-latest
     # Main-only deployment is set on the environment in the repository's
     # settings; the apply role trusts this environment and nothing else.
