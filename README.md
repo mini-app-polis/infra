@@ -114,8 +114,10 @@ and kept in Doppler:
 | `CLOUDFLARE_API_TOKEN_READ` | repository secret, plan job | every permission below at **Read** |
 | `CLOUDFLARE_API_TOKEN` | `production` environment secret, apply job | every permission below at **Write** (Account Settings stays Read) |
 
-Account permissions: Account Settings, Account Rulesets, Bulk URL
-Redirects, Cloudflare Pages, Workers Scripts, Hyperdrive, Turnstile.
+Account permissions: Account Settings, Account Rulesets, Account Filter
+Lists, Bulk URL Redirects, Cloudflare Pages, Workers Scripts, Hyperdrive,
+Turnstile. (Bulk redirect lists are read through Account Filter Lists;
+Bulk URL Redirects alone is not enough.)
 
 Zone permissions, on all zones in the account: Zone, Zone Settings, DNS,
 Zone WAF, Single Redirect, Workers Routes.
