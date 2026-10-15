@@ -20,7 +20,11 @@ state:
   mode, lifecycle by prefix), with a write-only user for db-backup and a
   read-only user for db-drill
 - `database_metrics.tf` — the db-poller user, which may only publish
-  under the `MiniAppPolis/Postgres` CloudWatch namespace
+  under the `MiniAppPolis/Postgres` CloudWatch namespace, and each
+  database's alarms (unreachable, connections, WAL archive), emailed
+  through their own SNS topic
+- `observability.tf` — the CloudWatch dashboards: `mini-app-polis-services`
+  for the APIs and cogs, `mini-app-polis-data` for the databases
 - `outputs.tf` — besides each cog's repository variables, a plan-time check
   that api-kaianolevine-com's six-hour dispatch claim window outlasts every
   cog's longest possible job
