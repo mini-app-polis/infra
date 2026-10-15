@@ -15,6 +15,10 @@ state:
   code through. watcher-cog is the exception: it has no queue and runs on a
   schedule, from `modules/scheduled-worker` — the function, an EventBridge
   rule, a failing-ticks alarm, and the same deploy role
+- `database_backups.tf` — the off-platform backup bucket for the two
+  production Postgres databases (versioned, Object Lock in governance
+  mode, lifecycle by prefix), with a write-only user for db-backup and a
+  read-only user for db-drill
 - `outputs.tf` — besides each cog's repository variables, a plan-time check
   that api-kaianolevine-com's six-hour dispatch claim window outlasts every
   cog's longest possible job

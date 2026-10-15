@@ -76,3 +76,12 @@ output "ci_roles" {
     AWS_APPLY_ROLE_ARN = aws_iam_role.infra_apply.arn
   }
 }
+
+output "db_backups" {
+  description = "The off-platform Postgres backup bucket, and the two users whose access keys are minted by hand straight into Doppler."
+  value = {
+    bucket      = aws_s3_bucket.db_backups.bucket
+    writer_user = aws_iam_user.db_backup_writer.name
+    reader_user = aws_iam_user.db_backup_reader.name
+  }
+}
