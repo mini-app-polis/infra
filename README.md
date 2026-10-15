@@ -19,6 +19,8 @@ state:
   production Postgres databases (versioned, Object Lock in governance
   mode, lifecycle by prefix), with a write-only user for db-backup and a
   read-only user for db-drill
+- `database_metrics.tf` — the db-poller user, which may only publish
+  under the `MiniAppPolis/Postgres` CloudWatch namespace
 - `outputs.tf` — besides each cog's repository variables, a plan-time check
   that api-kaianolevine-com's six-hour dispatch claim window outlasts every
   cog's longest possible job
