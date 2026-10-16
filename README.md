@@ -1,7 +1,7 @@
 # infra
 
-All of mini-app-polis's AWS infrastructure, in one Terraform root with one
-state:
+All of mini-app-polis's AWS infrastructure, and its Cloudflare account, in
+one Terraform root with one state:
 
 - `state.tf` — the bucket this repository's own state lives in
 - `account.tf` — one-per-account resources: the budget, the GitHub OIDC
@@ -25,6 +25,8 @@ state:
   through their own SNS topic
 - `observability.tf` — the CloudWatch dashboards: `mini-app-polis-services`
   for the APIs and cogs, `mini-app-polis-data` for the databases
+- `cloudflare*.tf` — the Cloudflare zones, DNS, Pages projects, rules, bot
+  management and Turnstile (see [Cloudflare](#cloudflare))
 - `outputs.tf` — besides each cog's repository variables, a plan-time check
   that api-kaianolevine-com's six-hour dispatch claim window outlasts every
   cog's longest possible job
@@ -47,7 +49,9 @@ Remote, in `s3://mini-app-polis-tfstate-400200465748/infra.tfstate`:
   Terraform variable, so nothing secret is in state or in a plan.
 
 Nothing on a workstation is load-bearing. A fresh machine needs the AWS CLI
-profile, Terraform and this repository.
+profile, Terraform and this repository, and, to plan, a Cloudflare token in
+`CLOUDFLARE_API_TOKEN` and a Doppler token in `DOPPLER_TOKEN` (the providers
+read both from the environment).
 
 ## Bootstrap (once, already done if the bucket exists)
 
@@ -79,7 +83,8 @@ import {
 ## Adding a cog
 
 Add a `module` block to `cogs.tf`, list its secrets by name (their values go
-in Doppler), apply, confirm the alert subscription email, and set the three
+in Doppler), add it to the `cogs` output and `cog_max_in_flight_seconds` in
+`outputs.tf`, apply, confirm the alert subscription email, and set the three
 repository variables from `terraform output cogs` in the cog's repository.
 
 ## Making a change

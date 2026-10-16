@@ -1,7 +1,7 @@
 # Cloudflare: the edge in front of every site and API.
 #
 # Thirteen zones, all on the Free plan, were created in the dashboard and
-# adopted here by import (cloudflare_imports.tf). Terraform owns them from
+# adopted here by import. Terraform owns them from
 # here on: a change made in the dashboard is drift, and the next apply puts
 # it back.
 #
