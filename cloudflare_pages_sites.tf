@@ -8,7 +8,8 @@
 # browser bundle, so none is a secret.
 #
 # Production and preview differ only in the API they point at (and the
-# Clerk instance behind deejaytools' dev API).
+# Clerk instance behind deejaytools' dev API). wcs has one Clerk instance,
+# so its preview builds carry the production key.
 
 data "doppler_secrets" "pages" {
   project = "mini-app-polis-ecosystem"
@@ -31,6 +32,7 @@ locals {
     "SENTRY_DSN_DEEJAYTOOLS",
     "KAIANO_API_BASE_URL",
     "KAIANO_API_BASE_URL_DEV",
+    "PUBLIC_CLERK_PUBLISHABLE_KEY",
     "PUBLIC_TURNSTILE_SITE_KEY",
     "GOOGLE_CALENDAR_PUBLIC_API_KEY",
   ]
@@ -60,12 +62,14 @@ locals {
       compatibility_date  = "2024-09-23"
       compatibility_flags = ["nodejs_compat"]
       production_env = {
-        KAIANO_API_BASE_URL       = local.doppler["KAIANO_API_BASE_URL"]
-        PUBLIC_TURNSTILE_SITE_KEY = local.doppler["PUBLIC_TURNSTILE_SITE_KEY"]
+        KAIANO_API_BASE_URL          = local.doppler["KAIANO_API_BASE_URL"]
+        PUBLIC_CLERK_PUBLISHABLE_KEY = local.doppler["PUBLIC_CLERK_PUBLISHABLE_KEY"]
+        PUBLIC_TURNSTILE_SITE_KEY    = local.doppler["PUBLIC_TURNSTILE_SITE_KEY"]
       }
       preview_env = {
-        KAIANO_API_BASE_URL       = local.doppler["KAIANO_API_BASE_URL_DEV"]
-        PUBLIC_TURNSTILE_SITE_KEY = local.doppler["PUBLIC_TURNSTILE_SITE_KEY"]
+        KAIANO_API_BASE_URL          = local.doppler["KAIANO_API_BASE_URL_DEV"]
+        PUBLIC_CLERK_PUBLISHABLE_KEY = local.doppler["PUBLIC_CLERK_PUBLISHABLE_KEY"]
+        PUBLIC_TURNSTILE_SITE_KEY    = local.doppler["PUBLIC_TURNSTILE_SITE_KEY"]
       }
     }
     "website-astro-wcsmn" = {
