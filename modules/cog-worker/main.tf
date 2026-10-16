@@ -1,7 +1,7 @@
 # One pipeline cog's runtime: its queue and dead-letter queue, the worker
 # function and the mapping that feeds it, the role CI deploys code through,
-# and alarms that tell someone when a job is dead-lettered or the queue has
-# stopped draining.
+# and alarms that tell someone when a job is dead-lettered, the queue has
+# stopped draining, or a job is running close to the function timeout.
 #
 # The cog's repository owns the function's code and deploys it with
 # UpdateFunctionCode, nothing more. Everything else is here.
@@ -319,6 +319,34 @@ resource "aws_cloudwatch_metric_alarm" "queue_stalled" {
 
   dimensions = {
     QueueName = aws_sqs_queue.jobs.name
+  }
+
+  alarm_actions = [aws_sns_topic.alerts.arn]
+  ok_actions    = [aws_sns_topic.alerts.arn]
+
+  tags = local.tags
+}
+
+# The job is slow, not failed. A job that reaches the timeout is killed
+# mid-run and retried (PIPE-020 makes it say so, but cannot tell a hung job
+# from a slow healthy one); this fires while the longest job still fits, so
+# the timeout can be raised before healthy jobs start dying at it. A job
+# killed at the timeout also lands here, its duration being the timeout.
+# Derived from timeout_seconds, so the two cannot drift apart.
+resource "aws_cloudwatch_metric_alarm" "duration_near_timeout" {
+  alarm_name          = "${var.name}-duration-near-timeout"
+  alarm_description   = "A job ran past ${var.duration_alarm_ratio * 100}% of the ${var.timeout_seconds}-second function timeout, so a slower one would be killed mid-run."
+  namespace           = "AWS/Lambda"
+  metric_name         = "Duration"
+  statistic           = "Maximum"
+  period              = 300
+  evaluation_periods  = 1
+  threshold           = var.timeout_seconds * 1000 * var.duration_alarm_ratio
+  comparison_operator = "GreaterThanThreshold"
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    FunctionName = aws_lambda_function.worker.function_name
   }
 
   alarm_actions = [aws_sns_topic.alerts.arn]

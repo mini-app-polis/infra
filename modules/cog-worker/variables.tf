@@ -24,7 +24,7 @@ variable "github_oidc_provider_arn" {
 }
 
 variable "alert_email" {
-  description = "Where the dead-letter alarm goes. The subscription must be confirmed by hand before it delivers anything."
+  description = "Where the module's alarms go. The subscription must be confirmed by hand before it delivers anything."
   type        = string
 }
 
@@ -63,6 +63,17 @@ variable "timeout_seconds" {
   validation {
     condition     = var.timeout_seconds >= 1 && var.timeout_seconds <= 900
     error_message = "Lambda's timeout is 1–900 seconds."
+  }
+}
+
+variable "duration_alarm_ratio" {
+  description = "The share of timeout_seconds the longest job may take before the duration alarm fires: low enough that the timeout can be raised while slow jobs still finish."
+  type        = number
+  default     = 0.8
+
+  validation {
+    condition     = var.duration_alarm_ratio > 0 && var.duration_alarm_ratio < 1
+    error_message = "duration_alarm_ratio is a share of the timeout, between 0 and 1 exclusive."
   }
 }
 

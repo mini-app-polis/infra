@@ -10,9 +10,10 @@ one Terraform root with one state:
   Store
 - `ci.tf` — the roles this repository's workflow plans and applies with
 - `cogs.tf` — one `module` block per pipeline cog, from
-  `modules/cog-worker`: queue, dead-letter queue and alarm, the worker
-  function and its event source mapping, and the role the cog's CI deploys
-  code through. watcher-cog is the exception: it has no queue and runs on a
+  `modules/cog-worker`: queue and dead-letter queue, the worker function
+  and its event source mapping, alarms for a dead-lettered job, a stalled
+  queue and a job nearing the function timeout, and the role the cog's CI
+  deploys code through. watcher-cog is the exception: it has no queue and runs on a
   schedule, from `modules/scheduled-worker` — the function, an EventBridge
   rule, a failing-ticks alarm, and the same deploy role
 - `database_backups.tf` — the off-platform backup bucket for the two
