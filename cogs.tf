@@ -96,9 +96,11 @@ module "transcription" {
   handler      = "transcription_cog.worker.lambda_handler"
   architecture = "arm64"
 
-  # The slowest run in four weeks was about 2.4 min; long audio is what
-  # takes time, so this keeps generous headroom below Lambda's 900s.
-  timeout_seconds = 600
+  # The slowest run in four weeks was about 2.4 min, but the timeout is set
+  # by the worst case, not the typical run: voicenotes/config.py budgets
+  # 720 s of Whisper and Claude timeouts plus Drive and Asana for one voice
+  # note. Below 900 s a slow but healthy note is killed mid-run and retried.
+  timeout_seconds = 900
   memory_mb       = 512
 
   # One file per job, serialised. FIFO with one message group, as deejay.
