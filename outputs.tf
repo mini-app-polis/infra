@@ -10,6 +10,7 @@ output "cogs" {
       evaluator     = module.evaluator
       deejay        = module.deejay
       transcription = module.transcription
+      "wiki-curator" = module.wiki_curator
     } :
     name => {
       AWS_DEPLOY_ROLE_ARN = m.deploy_role_arn
@@ -45,6 +46,7 @@ locals {
     evaluator     = module.evaluator.max_in_flight_seconds
     deejay        = module.deejay.max_in_flight_seconds
     transcription = module.transcription.max_in_flight_seconds
+    "wiki-curator" = module.wiki_curator.max_in_flight_seconds
   }
 }
 
