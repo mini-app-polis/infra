@@ -7,9 +7,9 @@ output "cogs" {
   description = "Per cog: the repository variables its deploy job reads, and where to look when a job dead-letters."
   value = {
     for name, m in {
-      evaluator     = module.evaluator
-      deejay        = module.deejay
-      transcription = module.transcription
+      evaluator      = module.evaluator
+      deejay         = module.deejay
+      transcription  = module.transcription
       "wiki-curator" = module.wiki_curator
     } :
     name => {
@@ -43,9 +43,9 @@ locals {
   dispatch_claim_window_seconds = 6 * 3600
 
   cog_max_in_flight_seconds = {
-    evaluator     = module.evaluator.max_in_flight_seconds
-    deejay        = module.deejay.max_in_flight_seconds
-    transcription = module.transcription.max_in_flight_seconds
+    evaluator      = module.evaluator.max_in_flight_seconds
+    deejay         = module.deejay.max_in_flight_seconds
+    transcription  = module.transcription.max_in_flight_seconds
     "wiki-curator" = module.wiki_curator.max_in_flight_seconds
   }
 }
