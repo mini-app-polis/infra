@@ -16,6 +16,10 @@ locals {
     evaluator     = module.evaluator
     deejay        = module.deejay
     transcription = module.transcription
+    # wiki-curator is left off: a queue cog's row is 10 metrics, and with it
+    # this dashboard would pass the free tier's 50 and be billed. Its alarms
+    # (dead letters, a stalled queue, duration near the timeout) come from the
+    # module either way.
   }
 
   # Scheduled: function only.

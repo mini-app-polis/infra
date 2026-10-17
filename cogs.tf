@@ -134,6 +134,50 @@ module "transcription" {
   }
 }
 
+# The wiki curator's worker (wiki-curator-cog ADR-006, MINI-95). One job per
+# message: link one source, consolidate named entities, or generate named
+# entities' prose. The API enqueues a link when a source is composed (behind
+# flags.wcs.wiki_jobs_enabled, off until switched on) and the follow-ons each
+# job names; the worker reads and writes the wiki state through the API.
+module "wiki_curator" {
+  source = "./modules/cog-worker"
+
+  name                     = "wiki-curator"
+  github_repo              = "mini-app-polis/wiki-curator-cog"
+  github_oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
+  alert_email              = local.alert_email
+  api_base_url             = var.kaiano_api_base_url
+
+  handler      = "wiki_curator_cog.worker.lambda_handler"
+  architecture = "arm64"
+
+  # A generate job is up to 25 entities, one model call each, one after
+  # another; a link job is one source's statements in a call or two. The
+  # worst case is the 25-entity job against a slow model, so 900 s, and the
+  # worker stops itself 30 s short of it and returns the record.
+  timeout_seconds = 900
+  # The export and the three state documents are read whole, about 30 MB of
+  # JSON in memory with the parsed copies.
+  memory_mb = 1024
+
+  # Serialised: two jobs at once could both pay for one entity, or race on a
+  # state document. FIFO with one message group, as deejay and transcription.
+  fifo                 = true
+  reserved_concurrency = 1
+  max_receive_count    = 3
+
+  ssm_parameters = {
+    ANTHROPIC_API_KEY        = "ANTHROPIC_API_KEY"
+    WIKI_CURATOR_COG_API_KEY = "WIKI_CURATOR_COG_API_KEY"
+  }
+  ssm_optional_parameters = {
+    LLM_MODEL       = "LLM_MODEL"
+    LLM_PROVIDER    = "LLM_PROVIDER"
+    LOGGING_LEVEL   = "LOGGING_LEVEL"
+    SENTRY_DSN_COGS = "SENTRY_DSN_COGS"
+  }
+}
+
 # Not a queue consumer: a tick every minute that lists the watched Drive
 # folders and asks the API for what it finds. The API's dispatch claims turn
 # the repeats into one job per file, so this remembers nothing and a missed
