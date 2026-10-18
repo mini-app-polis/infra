@@ -56,12 +56,12 @@ locals {
   # publish alarms as unreachable, so the two lists change together.
   postgres_databases = ["kaianolevine", "deejaytools"]
 
-  # WalDirFilling's threshold. Both volumes are 5 GB, and pgBackRest's
-  # asynchronous archive queue is capped at about half of that, 2.2 GiB:
-  # past the cap it drops WAL and point-in-time recovery has a hole. The
-  # alarm fires well short of the cap, and well above a healthy WAL
-  # directory, which checkpoints keep near max_wal_size (1 GB by default).
-  # Revisit if a volume is resized.
+  # WalDirFilling's threshold. It sits between two bounds: well above the
+  # WAL directory's normal peak (the WAL archive panel on
+  # mini-app-polis-data), and well below the size at which pgBackRest's
+  # asynchronous archive queue starts dropping WAL, past which point-in-time
+  # recovery has a hole. Revisit when either bound moves, such as a volume
+  # resize.
   postgres_wal_dir_alarm_bytes = 1.5 * 1024 * 1024 * 1024
 }
 
