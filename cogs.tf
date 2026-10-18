@@ -160,11 +160,16 @@ module "wiki_curator" {
   # JSON in memory with the parsed copies.
   memory_mb = 1024
 
-  # Serialised: two jobs at once could both pay for one entity, or race on a
-  # state document. FIFO with one message group, as deejay and transcription.
-  fifo                 = true
-  reserved_concurrency = 1
-  max_receive_count    = 3
+  # FIFO, and the API picks each job's message group by what it writes
+  # (api-kaianolevine-com wiki_dispatch.group_for): consolidate and generate
+  # share one group, so two never pay for one entity; link runs a group per
+  # source and materialise spreads over a few page groups, so lessons link
+  # and pages rebuild side by side. This is the ceiling on how many run at
+  # once across all groups. Each one reads the whole export from the API,
+  # which is what keeps it small.
+  fifo              = true
+  max_concurrency   = 5
+  max_receive_count = 3
 
   ssm_parameters = {
     ANTHROPIC_API_KEY        = "ANTHROPIC_API_KEY"
