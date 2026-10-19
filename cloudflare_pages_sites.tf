@@ -39,7 +39,6 @@ locals {
     "PUBLIC_TURNSTILE_SITE_KEY",
     "GOOGLE_CALENDAR_PUBLIC_API_KEY",
     "PUBLIC_API_URL",
-    "PUBLIC_API_URL_DEV",
     "PUBLIC_CALENDAR_ICS_URL",
   ]
 
@@ -103,7 +102,7 @@ locals {
         PUBLIC_TURNSTILE_SITE_KEY = local.doppler["PUBLIC_TURNSTILE_SITE_KEY"]
       }
       preview_env = {
-        PUBLIC_API_URL            = local.doppler["PUBLIC_API_URL_DEV"]
+        PUBLIC_API_URL            = local.doppler["KAIANO_API_BASE_URL_DEV"]
         PUBLIC_SITE_URL           = "https://software.kaianolevine.com"
         PUBLIC_TURNSTILE_SITE_KEY = local.doppler["PUBLIC_TURNSTILE_SITE_KEY"]
       }
