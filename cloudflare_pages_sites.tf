@@ -1,4 +1,4 @@
-# The three Pages sites whose build variables Terraform owns.
+# The Pages sites whose build variables Terraform owns.
 #
 # Doppler is where every value is edited; Terraform reads them straight from
 # the mini-app-polis-ecosystem / prd config with a read-only service token
@@ -7,9 +7,12 @@
 # the site's build reads and is plain text: all of them end up in the
 # browser bundle, so none is a secret.
 #
-# Production and preview differ only in the API they point at (and the
-# Clerk instance behind deejaytools' dev API). wcs has one Clerk instance,
-# so its preview builds carry the production key.
+# Where production and preview differ, it is only in the API they point at
+# (and the Clerk instance behind deejaytools' dev API). wcs has one Clerk
+# instance, so its preview builds carry the production key.
+#
+# PUBLIC_SITE_URL is a literal rather than a Doppler value: it is a site's
+# canonical domain, not a secret, and the same in every environment.
 
 data "doppler_secrets" "pages" {
   project = "mini-app-polis-ecosystem"
@@ -35,6 +38,9 @@ locals {
     "PUBLIC_CLERK_PUBLISHABLE_KEY",
     "PUBLIC_TURNSTILE_SITE_KEY",
     "GOOGLE_CALENDAR_PUBLIC_API_KEY",
+    "PUBLIC_API_URL",
+    "PUBLIC_API_URL_DEV",
+    "PUBLIC_CALENDAR_ICS_URL",
   ]
 
   cloudflare_pages_sites = {
@@ -83,6 +89,40 @@ locals {
       }
       preview_env = {
         GOOGLE_CALENDAR_PUBLIC_API_KEY = local.doppler["GOOGLE_CALENDAR_PUBLIC_API_KEY"]
+      }
+    }
+    "website-astro-software" = {
+      repo_name           = "website-astro-software"
+      repo_id             = "1186385635"
+      build_command       = "npm run build"
+      compatibility_date  = "2024-01-01"
+      compatibility_flags = []
+      production_env = {
+        PUBLIC_API_URL            = local.doppler["PUBLIC_API_URL"]
+        PUBLIC_SITE_URL           = "https://software.kaianolevine.com"
+        PUBLIC_TURNSTILE_SITE_KEY = local.doppler["PUBLIC_TURNSTILE_SITE_KEY"]
+      }
+      preview_env = {
+        PUBLIC_API_URL            = local.doppler["PUBLIC_API_URL_DEV"]
+        PUBLIC_SITE_URL           = "https://software.kaianolevine.com"
+        PUBLIC_TURNSTILE_SITE_KEY = local.doppler["PUBLIC_TURNSTILE_SITE_KEY"]
+      }
+    }
+    "kwalla-dance" = {
+      repo_name           = "kwalla-dance"
+      repo_id             = "1338786445"
+      build_command       = "npm run build"
+      compatibility_date  = "2026-01-01"
+      compatibility_flags = []
+      # Pages project variables reach the site's Functions as well as its
+      # build, so functions/api/calendar.ts reads the feed address from here.
+      production_env = {
+        PUBLIC_CALENDAR_ICS_URL = local.doppler["PUBLIC_CALENDAR_ICS_URL"]
+        PUBLIC_SITE_URL         = "https://kwalla.dance"
+      }
+      preview_env = {
+        PUBLIC_CALENDAR_ICS_URL = local.doppler["PUBLIC_CALENDAR_ICS_URL"]
+        PUBLIC_SITE_URL         = "https://kwalla.dance"
       }
     }
   }
@@ -155,4 +195,16 @@ moved {
 moved {
   from = cloudflare_pages_project.this["website-astro-wcsmn"]
   to   = cloudflare_pages_project.site["website-astro-wcsmn"]
+}
+
+# From cloudflare_pages_project.this, where software's variables were left
+# to the dashboard and kwalla's to its wrangler.toml.
+moved {
+  from = cloudflare_pages_project.this["website-astro-software"]
+  to   = cloudflare_pages_project.site["website-astro-software"]
+}
+
+moved {
+  from = cloudflare_pages_project.this["kwalla-dance"]
+  to   = cloudflare_pages_project.site["kwalla-dance"]
 }

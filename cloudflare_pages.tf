@@ -28,28 +28,12 @@ locals {
       build_command   = "npm run build"
       destination_dir = "dist"
     }
-    "kwalla-dance" = {
-      owner           = "mini-app-polis"
-      owner_id        = "270520182"
-      repo_name       = "kwalla-dance"
-      repo_id         = "1338786445"
-      build_command   = "npm run build"
-      destination_dir = "dist"
-    }
     "wcsmn-com" = {
       owner           = "kaianolevine"
       owner_id        = "202033240"
       repo_name       = "wcsmn.com"
       repo_id         = "1143831533"
       build_command   = "git fetch --force --tags --prune || true && git fetch --unshallow --tags 2>/dev/null || true && SITE_VERSION=\"$(git describe --tags --abbrev=0 2>/dev/null || git describe --tags --always)\" npm run build:11ty"
-      destination_dir = "dist"
-    }
-    "website-astro-software" = {
-      owner           = "mini-app-polis"
-      owner_id        = "270520182"
-      repo_name       = "website-astro-software"
-      repo_id         = "1186385635"
-      build_command   = "npm run build"
       destination_dir = "dist"
     }
   }
@@ -105,8 +89,8 @@ resource "cloudflare_pages_project" "this" {
   }
 
   lifecycle {
-    # Environment variables and compatibility settings belong to Doppler and
-    # the dashboard (see the header).
+    # Environment variables and compatibility settings are not managed for
+    # these projects (see the header).
     ignore_changes = [deployment_configs]
   }
 }
