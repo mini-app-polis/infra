@@ -67,7 +67,7 @@ locals {
     # mnmusicmovement.com
     "_dmarc.mnmusicmovement.com TXT"              = { zone = "mnmusicmovement.com", type = "TXT", name = "_dmarc.mnmusicmovement.com", content = "\"v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com\"", proxied = false, ttl = 1, priority = null }
     "brevo1._domainkey.mnmusicmovement.com CNAME" = { zone = "mnmusicmovement.com", type = "CNAME", name = "brevo1._domainkey.mnmusicmovement.com", content = "b1.kaianolevine-com.dkim.brevo.com", proxied = false, ttl = 1, priority = null }
-    "brevo2._domainkey.mnmusicmovement.com CNAME" = { zone = "mnmusicmovement.com", type = "CNAME", name = "brevo2._domainkey.mnmusicmovement.com", content = "b1.kaianolevine-com.dkim.brevo.com", proxied = false, ttl = 1, priority = null }
+    "brevo2._domainkey.mnmusicmovement.com CNAME" = { zone = "mnmusicmovement.com", type = "CNAME", name = "brevo2._domainkey.mnmusicmovement.com", content = "b2.kaianolevine-com.dkim.brevo.com", proxied = false, ttl = 1, priority = null }
     "mnmusicmovement.com TXT"                     = { zone = "mnmusicmovement.com", type = "TXT", name = "mnmusicmovement.com", content = "\"brevo-code:3f35e457274d148d4e25e13f158f84fd\"", proxied = false, ttl = 1, priority = null }
     "www.mnmusicmovement.com CNAME"               = { zone = "mnmusicmovement.com", type = "CNAME", name = "www.mnmusicmovement.com", content = "mnmusicmovement.com", proxied = true, ttl = 1, priority = null }
 

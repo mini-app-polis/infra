@@ -1,29 +1,36 @@
 # The Pages sites whose build variables Terraform owns.
 #
-# Doppler is where every value is edited; Terraform reads them straight from
-# the mini-app-polis-ecosystem / prd config with a read-only service token
-# (DOPPLER_TOKEN_PAGES), so there is no sync to keep alive and a value keeps
-# one name from Doppler to the build. Each variable below is named for what
-# the site's build reads and is plain text: all of them end up in the
-# browser bundle, so none is a secret.
+# Doppler is where every value is edited. Terraform reads them from a
+# Doppler project of their own, mini-app-polis-pages / prd, with a read-only
+# service token scoped to it (the GitHub secret DOPPLER_TOKEN_PAGES,
+# exported as DOPPLER_TOKEN). Each secret there is a reference to the value
+# in mini-app-polis-ecosystem, so a value is still edited in one place.
+#
+# Why a project of its own: a data source's result is written to state, the
+# whole map, not only the names used below. Pointed at the ecosystem's prd
+# config, it put every worker's secret in the state file. This project holds
+# only the public build values listed below, so that is all state can hold.
+# Adding a name below means adding its reference there first.
+#
+# Each variable below is named for what the site's build reads and is plain
+# text: all of them end up in the browser bundle, so none is a secret.
 #
 # Where production and preview differ, it is only in the API they point at
 # and the Clerk instance behind it: deejaytools and wcs each have a
 # development Clerk instance, and their preview builds carry its pk_test_ key
-# (the *_DEV values, which reference the dev config from prd).
+# (the *_DEV values).
 #
 # PUBLIC_SITE_URL is a literal rather than a Doppler value: it is a site's
 # canonical domain, not a secret, and the same in every environment.
 
 data "doppler_secrets" "pages" {
-  project = "mini-app-polis-ecosystem"
+  project = "mini-app-polis-pages"
   config  = "prd"
 }
 
 locals {
-  # Only the named values are taken from the config, and only they are
-  # unmarked: they are public, and for_each cannot iterate over sensitive
-  # values. Everything else in the config stays sensitive and unused.
+  # The named values are unmarked: they are public, and for_each cannot
+  # iterate over sensitive values.
   doppler = { for n in local.cloudflare_pages_doppler_names : n => nonsensitive(trimspace(lookup(data.doppler_secrets.pages.map, n, ""))) }
 
   # Every Doppler value a site build below needs. A missing or empty one
