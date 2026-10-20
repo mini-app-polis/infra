@@ -184,6 +184,47 @@ module "wiki_curator" {
   }
 }
 
+# The one writer to the task board. A source asks the API for a task
+# (POST /v1/tasks) and the API enqueues it here; the worker composes the
+# task, mints its id and creates it in Asana. It reads and writes nothing
+# through the API but its run reports.
+module "task_manager" {
+  source = "./modules/cog-worker"
+
+  name                     = "task-manager"
+  github_repo              = "mini-app-polis/task-manager-cog"
+  github_oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
+  alert_email              = local.alert_email
+  api_base_url             = var.kaiano_api_base_url
+
+  handler      = "task_manager_cog.worker.lambda_handler"
+  architecture = "arm64"
+
+  # A job is a handful of Asana requests: look the task up, page the board's
+  # names, resolve tags, create. Each has the client's 30 s timeout, so 120 s
+  # covers several slow ones; the worker stops itself 20 s short of it.
+  timeout_seconds = 120
+  memory_mb       = 256
+
+  # Serialised: ids are minted as the highest on the board plus one, which
+  # is only safe one job at a time. FIFO with one message group, as deejay.
+  fifo                 = true
+  reserved_concurrency = 1
+  max_receive_count    = 3
+
+  ssm_parameters = {
+    ASANA_ACCESS_TOKEN       = "ASANA_ACCESS_TOKEN"
+    ASANA_INBOX_PROJECT_ID   = "ASANA_INBOX_PROJECT_ID"
+    ASANA_WORKSPACE_ID       = "ASANA_WORKSPACE_ID"
+    TASK_MANAGER_COG_API_KEY = "TASK_MANAGER_COG_API_KEY"
+  }
+  ssm_optional_parameters = {
+    ASANA_INBOX_SECTION_ID = "ASANA_INBOX_SECTION_ID"
+    LOGGING_LEVEL          = "LOGGING_LEVEL"
+    SENTRY_DSN_COGS        = "SENTRY_DSN_COGS"
+  }
+}
+
 # Not a queue consumer: a tick every minute that lists the watched Drive
 # folders and asks the API for what it finds. The API's dispatch claims turn
 # the repeats into one job per file, so this remembers nothing and a missed
