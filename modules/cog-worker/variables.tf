@@ -18,6 +18,22 @@ variable "github_repo" {
   type        = string
 }
 
+variable "github_oidc_subject" {
+  description = <<-DESC
+    The repository part of the OIDC subject its workflows present, when it
+    is not repo:<github_repo>. GitHub gives repositories created since
+    October 2026 immutable subjects, repo:<owner>@<owner id>/<repo>@<repo
+    id>, and they cannot opt out. Unset, the name form is trusted.
+  DESC
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.github_oidc_subject == null || can(regex("^repo:[^:]+$", var.github_oidc_subject))
+    error_message = "github_oidc_subject is repo:<...> with no ref part; the ref is pinned by the module."
+  }
+}
+
 variable "github_oidc_provider_arn" {
   description = "The account's GitHub OIDC provider. There is one per account; it lives in the root's account.tf."
   type        = string

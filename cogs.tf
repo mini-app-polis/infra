@@ -134,7 +134,7 @@ module "transcription" {
   }
 }
 
-# The wiki curator's worker (wiki-curator-cog ADR-006, MINI-95). One job per
+# The wiki curator's worker (wiki-curator-cog ADR-006). One job per
 # message: link one source, consolidate named entities, or generate named
 # entities' prose. The API enqueues a link when a source is composed (behind
 # flags.wcs.wiki_jobs_enabled, off until switched on) and the follow-ons each
@@ -194,6 +194,10 @@ module "task_manager" {
   name                     = "task-manager"
   github_repo              = "mini-app-polis/task-manager-cog"
   github_oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
+  # Created after GitHub made immutable OIDC subjects the default, which a
+  # repository cannot turn off: its workflows present the org's and the
+  # repository's ids, not their names.
+  github_oidc_subject = "repo:mini-app-polis@270520182/task-manager-cog@1427477351"
   alert_email              = local.alert_email
   api_base_url             = var.kaiano_api_base_url
 

@@ -234,7 +234,7 @@ data "aws_iam_policy_document" "deploy_assume" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repo}:ref:refs/heads/main"]
+      values   = ["${coalesce(var.github_oidc_subject, "repo:${var.github_repo}")}:ref:refs/heads/main"]
     }
   }
 }
