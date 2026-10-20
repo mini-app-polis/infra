@@ -194,12 +194,13 @@ module "task_manager" {
   name                     = "task-manager"
   github_repo              = "mini-app-polis/task-manager-cog"
   github_oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
+  alert_email              = local.alert_email
+  api_base_url             = var.kaiano_api_base_url
+
   # Created after GitHub made immutable OIDC subjects the default, which a
   # repository cannot turn off: its workflows present the org's and the
   # repository's ids, not their names.
   github_oidc_subject = "repo:mini-app-polis@270520182/task-manager-cog@1427477351"
-  alert_email              = local.alert_email
-  api_base_url             = var.kaiano_api_base_url
 
   handler      = "task_manager_cog.worker.lambda_handler"
   architecture = "arm64"
