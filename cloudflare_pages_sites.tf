@@ -8,8 +8,9 @@
 # browser bundle, so none is a secret.
 #
 # Where production and preview differ, it is only in the API they point at
-# (and the Clerk instance behind deejaytools' dev API). wcs has one Clerk
-# instance, so its preview builds carry the production key.
+# and the Clerk instance behind it: deejaytools and wcs each have a
+# development Clerk instance, and their preview builds carry its pk_test_ key
+# (the *_DEV values, which reference the dev config from prd).
 #
 # PUBLIC_SITE_URL is a literal rather than a Doppler value: it is a site's
 # canonical domain, not a secret, and the same in every environment.
@@ -36,6 +37,7 @@ locals {
     "KAIANO_API_BASE_URL",
     "KAIANO_API_BASE_URL_DEV",
     "PUBLIC_CLERK_PUBLISHABLE_KEY",
+    "PUBLIC_CLERK_PUBLISHABLE_KEY_DEV",
     "PUBLIC_TURNSTILE_SITE_KEY",
     "GOOGLE_CALENDAR_PUBLIC_API_KEY",
     "PUBLIC_API_URL",
@@ -73,7 +75,7 @@ locals {
       }
       preview_env = {
         KAIANO_API_BASE_URL          = local.doppler["KAIANO_API_BASE_URL_DEV"]
-        PUBLIC_CLERK_PUBLISHABLE_KEY = local.doppler["PUBLIC_CLERK_PUBLISHABLE_KEY"]
+        PUBLIC_CLERK_PUBLISHABLE_KEY = local.doppler["PUBLIC_CLERK_PUBLISHABLE_KEY_DEV"]
         PUBLIC_TURNSTILE_SITE_KEY    = local.doppler["PUBLIC_TURNSTILE_SITE_KEY"]
       }
     }
