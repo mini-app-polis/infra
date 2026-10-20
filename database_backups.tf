@@ -22,7 +22,7 @@ locals {
 
   # How long a dump is kept. These numbers are also how long a deejaytools
   # user's deleted data can survive in a backup, which the data-erasure
-  # path has to state (MINI-66).
+  # path has to state.
   db_backups_daily_days   = 30
   db_backups_monthly_days = 90
 

@@ -6,7 +6,9 @@
 # prefix — /mini-app-polis/prd/ — and each worker loads the parameters its
 # module block names (ssm_parameters / ssm_optional_parameters in cogs.tf),
 # not the whole prefix, at cold start and again on each invocation. Nothing
-# secret passes through Terraform, so nothing secret is in state or in a plan.
+# secret passes through Terraform, so nothing secret is in state or in a plan
+# (Terraform's own Doppler read is a separate, public-only project; see
+# cloudflare_pages_sites.tf).
 #
 # Because the config is shared, a value that differs per worker carries the
 # worker in its name (DEEJAY_COG_API_KEY), so one name never means two

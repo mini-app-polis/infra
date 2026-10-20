@@ -42,6 +42,6 @@ provider "aws" {
 provider "cloudflare" {}
 
 # Read-only. The token comes from DOPPLER_TOKEN in the environment: a
-# service token scoped to the one Doppler config the Pages sites read from
-# (see cloudflare_pages_sites.tf).
+# service token scoped to mini-app-polis-pages / prd, the config that holds
+# only the Pages sites' public build values (see cloudflare_pages_sites.tf).
 provider "doppler" {}

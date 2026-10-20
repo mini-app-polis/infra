@@ -47,7 +47,9 @@ Remote, in `s3://mini-app-polis-tfstate-400200465748/infra.tfstate`:
 - **No secrets.** Worker secrets live in SSM Parameter Store, synced from
   Doppler, and are read by the function at cold start (the queue workers
   read them again at every invocation). Nothing secret is a
-  Terraform variable, so nothing secret is in state or in a plan.
+  Terraform variable, and the one Doppler config Terraform reads
+  (mini-app-polis-pages / prd) holds only the Pages sites' public build
+  values, so nothing secret is in state or in a plan.
 
 Nothing on a workstation is load-bearing. A fresh machine needs the AWS CLI
 profile, Terraform and this repository, and, to plan, a Cloudflare token in

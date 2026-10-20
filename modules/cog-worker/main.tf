@@ -226,11 +226,15 @@ data "aws_iam_policy_document" "deploy_assume" {
       values   = ["sts.amazonaws.com"]
     }
 
-    # Without this, any repository on GitHub could assume the role.
+    # Without this, any repository on GitHub could assume the role. Pinned
+    # to main, where the cog's release job and its deploy run: a pull
+    # request, another branch or another workflow in the cog's repository
+    # cannot push code to the production function. A by-hand redeploy is
+    # dispatched from main too.
     condition {
-      test     = "StringLike"
+      test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repo}:*"]
+      values   = ["${coalesce(var.github_oidc_subject, "repo:${var.github_repo}")}:ref:refs/heads/main"]
     }
   }
 }
