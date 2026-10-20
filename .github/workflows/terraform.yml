@@ -12,9 +12,10 @@
 # so main is what is applied. After each merge, sync-dev fast-forwards dev
 # to main. See ci.tf for the roles.
 #
-# Plans no longer carry secrets — none pass through Terraform — and the one
-# sensitive value read (the alert address) prints as (sensitive). No plan
-# file is uploaded as an artifact: artifacts on a public repository are
+# Plans carry no secrets: the Doppler token reads only the Pages sites'
+# public build values (cloudflare_pages_sites.tf), and the one sensitive
+# value read (the alert address) prints as (sensitive). No plan file is
+# uploaded as an artifact: artifacts on a public repository are
 # downloadable, and a saved plan holds sensitive values in the clear.
 
 name: terraform
