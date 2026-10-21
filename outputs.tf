@@ -12,6 +12,7 @@ output "cogs" {
       transcription  = module.transcription
       "wiki-curator" = module.wiki_curator
       "task-manager" = module.task_manager
+      "task-groomer" = module.task_groomer
     } :
     name => {
       AWS_DEPLOY_ROLE_ARN = m.deploy_role_arn

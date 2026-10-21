@@ -296,3 +296,52 @@ module "watcher" {
     SENTRY_DSN_COGS = "SENTRY_DSN_COGS"
   }
 }
+
+module "task_groomer" {
+  source = "./modules/cog-worker"
+
+  name                     = "task-groomer"
+  github_repo              = "mini-app-polis/task-groomer-cog"
+  github_oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
+  alert_email              = local.alert_email
+  api_base_url             = var.kaiano_api_base_url
+
+  # Created with GitHub's immutable OIDC subjects, as task-manager-cog was.
+  github_oidc_subject = "repo:mini-app-polis@270520182/task-groomer-cog@1428880997"
+
+  handler      = "task_groomer_cog.worker.lambda_handler"
+  architecture = "arm64"
+
+  # A job is one model run of up to 8 rounds, each a Messages request that
+  # can take tens of seconds, plus reading repositories as zipballs held in
+  # memory. The worker stops itself 20 s short of the timeout.
+  timeout_seconds = 600
+  memory_mb       = 1024
+
+  # A job is a paid run, and a redelivered job would pay again. Each message
+  # is delivered once: a run that fails is reported by the cog and the task
+  # waits for its next change. A crash outside the run goes straight to the
+  # dead-letter queue, whose alarm says so.
+  max_receive_count = 1
+
+  # A standard queue: grooming one task does not wait on another. Two at a
+  # time keeps the hourly batch (at most 5) quick without bursting the
+  # model's rate limits. No reservation, so nothing is throttled into
+  # spending its one delivery.
+  max_concurrency = 2
+
+  ssm_parameters = {
+    ANTHROPIC_API_KEY        = "ANTHROPIC_API_KEY"
+    TASK_GROOMER_COG_API_KEY = "TASK_GROOMER_COG_API_KEY"
+  }
+  ssm_optional_parameters = {
+    GITHUB_TOKEN              = "GITHUB_TOKEN"
+    GROOMER_MODEL             = "GROOMER_MODEL"
+    GROOMER_MAX_ROUNDS        = "GROOMER_MAX_ROUNDS"
+    GROOMER_MAX_INPUT_TOKENS  = "GROOMER_MAX_INPUT_TOKENS"
+    GROOMER_MAX_OUTPUT_TOKENS = "GROOMER_MAX_OUTPUT_TOKENS"
+    GROOMER_MONTHLY_CAP_USD   = "GROOMER_MONTHLY_CAP_USD"
+    LOGGING_LEVEL             = "LOGGING_LEVEL"
+    SENTRY_DSN_COGS           = "SENTRY_DSN_COGS"
+  }
+}
