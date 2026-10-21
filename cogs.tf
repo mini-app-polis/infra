@@ -213,6 +213,16 @@ module "task_manager" {
   reserved_concurrency = 1
   max_receive_count    = 3
 
+  # The hourly grooming sweep: every task waiting to be worked, checked
+  # against the definition of ready. On the queue, so it never runs beside
+  # a job creating a task.
+  schedules = {
+    sweep = {
+      expression = "rate(1 hour)"
+      body       = jsonencode({ type = "task.sweep", version = 1 })
+    }
+  }
+
   ssm_parameters = {
     ASANA_ACCESS_TOKEN       = "ASANA_ACCESS_TOKEN"
     ASANA_INBOX_PROJECT_ID   = "ASANA_INBOX_PROJECT_ID"
@@ -221,6 +231,9 @@ module "task_manager" {
   }
   ssm_optional_parameters = {
     ASANA_INBOX_SECTION_ID = "ASANA_INBOX_SECTION_ID"
+    GROOM_AUTO_READY       = "GROOM_AUTO_READY"
+    GROOM_SECTIONS         = "GROOM_SECTIONS"
+    READY_SECTION          = "READY_SECTION"
     LOGGING_LEVEL          = "LOGGING_LEVEL"
     SENTRY_DSN_COGS        = "SENTRY_DSN_COGS"
   }

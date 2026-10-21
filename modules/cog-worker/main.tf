@@ -59,6 +59,60 @@ resource "aws_sqs_queue" "jobs" {
   tags = local.tags
 }
 
+# ── Scheduled jobs ───────────────────────────────────────────────────────
+# A schedule is a producer like the API: it puts a message on the queue, and
+# the worker takes it in turn. Only a cog with schedules gets these.
+
+resource "aws_cloudwatch_event_rule" "schedule" {
+  for_each = var.schedules
+
+  name                = "${var.name}-${each.key}"
+  description         = "Puts a ${each.key} job on ${aws_sqs_queue.jobs.name}."
+  schedule_expression = each.value.expression
+
+  tags = local.tags
+}
+
+resource "aws_cloudwatch_event_target" "schedule" {
+  for_each = var.schedules
+
+  rule  = aws_cloudwatch_event_rule.schedule[each.key].name
+  arn   = aws_sqs_queue.jobs.arn
+  input = each.value.body
+
+  # The API's message group for this queue (job_queue.message_group): one
+  # group keeps a FIFO queue strictly serial.
+  dynamic "sqs_target" {
+    for_each = var.fifo ? [var.name] : []
+    content {
+      message_group_id = sqs_target.value
+    }
+  }
+}
+
+# EventBridge sends as itself, so the queue must allow it, and only from
+# this cog's own rules.
+resource "aws_sqs_queue_policy" "schedule" {
+  count = length(var.schedules) > 0 ? 1 : 0
+
+  queue_url = aws_sqs_queue.jobs.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid       = "ScheduledJobs"
+      Effect    = "Allow"
+      Principal = { Service = "events.amazonaws.com" }
+      Action    = "sqs:SendMessage"
+      Resource  = aws_sqs_queue.jobs.arn
+      Condition = {
+        ArnEquals = {
+          "aws:SourceArn" = [for rule in aws_cloudwatch_event_rule.schedule : rule.arn]
+        }
+      }
+    }]
+  })
+}
+
 # Lets the console's DLQ redrive move a message back once its cause is fixed.
 resource "aws_sqs_queue_redrive_allow_policy" "dlq" {
   queue_url = aws_sqs_queue.dlq.id
