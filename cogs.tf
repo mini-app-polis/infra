@@ -98,8 +98,8 @@ module "transcription" {
 
   # The slowest run in four weeks was about 2.4 min, but the timeout is set
   # by the worst case, not the typical run: voicenotes/config.py budgets
-  # 720 s of Whisper and Claude timeouts plus Drive and Asana for one voice
-  # note. Below 900 s a slow but healthy note is killed mid-run and retried.
+  # 720 s of Whisper and Claude timeouts plus Drive and the task request for
+  # one voice note. Below 900 s a slow but healthy note is killed mid-run and retried.
   timeout_seconds = 900
   memory_mb       = 512
 
@@ -110,9 +110,6 @@ module "transcription" {
 
   ssm_parameters = {
     ANTHROPIC_API_KEY                  = "ANTHROPIC_API_KEY"
-    ASANA_ACCESS_TOKEN                 = "ASANA_ACCESS_TOKEN"
-    ASANA_INBOX_PROJECT_ID             = "ASANA_INBOX_PROJECT_ID"
-    ASANA_WORKSPACE_ID                 = "ASANA_WORKSPACE_ID"
     GOOGLE_CREDENTIALS_JSON            = "GOOGLE_CREDENTIALS_JSON"
     GOOGLE_DRIVE_VOICE_INBOX_FOLDER_ID = "GOOGLE_DRIVE_VOICE_INBOX_FOLDER_ID"
     NOTES_INPUT_FOLDER_ID              = "NOTES_INPUT_FOLDER_ID"
@@ -123,7 +120,6 @@ module "transcription" {
   # Tuning the code has defaults for: set in Doppler to override.
   ssm_optional_parameters = {
     ARCHIVE_RETENTION_DAYS = "ARCHIVE_RETENTION_DAYS"
-    ASANA_INBOX_SECTION_ID = "ASANA_INBOX_SECTION_ID"
     CLAUDE_MODEL           = "CLAUDE_MODEL"
     LLM_MODEL              = "LLM_MODEL"
     LLM_PROVIDER           = "LLM_PROVIDER"
