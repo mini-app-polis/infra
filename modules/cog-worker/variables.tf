@@ -186,6 +186,21 @@ variable "max_concurrency" {
   }
 }
 
+variable "schedules" {
+  description = <<-DESC
+    Jobs the cog runs on a clock, by name. Each puts its body on the cog's
+    own queue on its schedule expression ("rate(1 hour)", "cron(...)"), so
+    a scheduled job waits its turn behind the queue's other jobs rather
+    than running beside them. On a FIFO queue it is sent in the message
+    group the API uses, the cog's name. The body is the cog's to define.
+  DESC
+  type = map(object({
+    expression = string
+    body       = string
+  }))
+  default = {}
+}
+
 variable "log_retention_days" {
   description = "CloudWatch Logs retains forever by default; this group is declared so it does not."
   type        = number
