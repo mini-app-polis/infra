@@ -26,9 +26,11 @@ module "evaluator" {
   # retried, but a retry still has to fit inside the 300s timeout.
   max_concurrency = 20
 
+  # GITHUB_TOKEN is the name the code reads; its value is the fleet's one
+  # read-only GitHub token, GITHUB_DASHBOARD_TOKEN.
   ssm_parameters = {
     EVALUATOR_COG_API_KEY = "EVALUATOR_COG_API_KEY"
-    GITHUB_TOKEN          = "GITHUB_TOKEN"
+    GITHUB_TOKEN          = "GITHUB_DASHBOARD_TOKEN"
   }
   ssm_optional_parameters = {
     ANTHROPIC_API_KEY = "ANTHROPIC_API_KEY"
@@ -338,7 +340,7 @@ module "task_groomer" {
     TASK_GROOMER_COG_API_KEY = "TASK_GROOMER_COG_API_KEY"
   }
   ssm_optional_parameters = {
-    GITHUB_TOKEN              = "GITHUB_TOKEN"
+    GITHUB_TOKEN              = "GITHUB_DASHBOARD_TOKEN"
     GROOMER_MODEL             = "GROOMER_MODEL"
     GROOMER_MAX_ROUNDS        = "GROOMER_MAX_ROUNDS"
     GROOMER_MAX_INPUT_TOKENS  = "GROOMER_MAX_INPUT_TOKENS"
