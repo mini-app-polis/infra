@@ -24,6 +24,9 @@ one Terraform root with one state:
   under the `MiniAppPolis/Postgres` CloudWatch namespace, and each
   database's alarms (unreachable, connections, WAL archive), emailed
   through their own SNS topic
+- `audit_trail.tf` — the account's CloudTrail trail: management events in
+  every region, plus every read and write of the database dumps, kept a
+  year in its own bucket (see [Audit trail](#audit-trail))
 - `observability.tf` — the CloudWatch dashboards: `mini-app-polis-services`
   for the APIs and cogs, `mini-app-polis-data` for the databases
 - `cloudflare*.tf` — the Cloudflare zones, DNS, Pages projects, rules, bot
@@ -122,6 +125,28 @@ terraform apply tfplan
 
 Commit whatever that applied to `main` straight after, through a pull
 request, or the next CI apply will undo it.
+
+## Audit trail
+
+`audit_trail.tf` records every management event and every object read or
+write on the database backup bucket. Management events from the last 90
+days can also be searched with `aws cloudtrail lookup-events`. Data events
+(the dump reads) are only in the trail's bucket: one gzipped JSON file per
+region per few minutes, under
+`AWSLogs/<account>/CloudTrail/<region>/<yyyy>/<mm>/<dd>/`.
+
+Who has read a dump, newest last:
+
+```sh
+mkdir -p /tmp/audit && aws --profile miniapppolis s3 sync \
+  "s3://mini-app-polis-cloudtrail-$(aws --profile miniapppolis sts get-caller-identity --query Account --output text)/AWSLogs/" /tmp/audit --exclude "*" --include "*/us-east-1/*"
+find /tmp/audit -name '*.json.gz' -exec gzip -dc {} + \
+  | jq -r '.Records[] | select(.eventName == "GetObject") | [.eventTime, .userIdentity.arn, .sourceIPAddress, .requestParameters.key] | @tsv' \
+  | sort
+```
+
+Expected readers: `db-backup-reader` (db-drill, monthly) and you. Anyone
+else, or a source IP that is not Railway's or yours, is the finding.
 
 ## Cloudflare
 
