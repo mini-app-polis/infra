@@ -87,8 +87,9 @@ data "aws_iam_policy_document" "infra_plan_limits" {
   }
 
   # ReadOnlyAccess also grants s3:GetObject on every bucket, which would let
-  # any pull-request run download the production database dumps. A plan
-  # reads the bucket's configuration, never its objects.
+  # any pull-request run download the production database dumps, or the
+  # audit trail's record of who read them. A plan reads a bucket's
+  # configuration, never its objects.
   statement {
     sid    = "NoDatabaseDumps"
     effect = "Deny"
@@ -98,7 +99,10 @@ data "aws_iam_policy_document" "infra_plan_limits" {
       "s3:GetObjectAttributes",
       "s3:GetObjectVersionAttributes",
     ]
-    resources = ["${aws_s3_bucket.db_backups.arn}/*"]
+    resources = [
+      "${aws_s3_bucket.db_backups.arn}/*",
+      "${aws_s3_bucket.audit_trail.arn}/*",
+    ]
   }
 }
 
