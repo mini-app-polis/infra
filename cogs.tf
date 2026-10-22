@@ -231,7 +231,6 @@ module "task_manager" {
   }
   ssm_optional_parameters = {
     ASANA_INBOX_SECTION_ID = "ASANA_INBOX_SECTION_ID"
-    BLOCKED_SECTION        = "BLOCKED_SECTION"
     GROOM_AUTO_READY       = "GROOM_AUTO_READY"
     GROOM_DISPATCH         = "GROOM_DISPATCH"
     GROOM_DISPATCH_LIMIT   = "GROOM_DISPATCH_LIMIT"
