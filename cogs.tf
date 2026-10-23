@@ -241,6 +241,12 @@ module "task_manager" {
     REFINING_SECTION       = "REFINING_SECTION"
     LOGGING_LEVEL          = "LOGGING_LEVEL"
     SENTRY_DSN_COGS        = "SENTRY_DSN_COGS"
+    # The leaf-or-compound check and applying a groomer's split: shapes off
+    # unless true; a split only reported unless GROOM_SPLIT_DRY_RUN is false.
+    BLOCKED_SECTION          = "BLOCKED_SECTION"
+    GROOM_SPLIT_DRY_RUN      = "GROOM_SPLIT_DRY_RUN"
+    GROOM_SPLIT_MAX_CHILDREN = "GROOM_SPLIT_MAX_CHILDREN"
+    GROOM_TASK_SHAPES        = "GROOM_TASK_SHAPES"
     # Agent dispatch at the end of the sweep: off unless AGENT_DISPATCH is
     # true. The agent GitHub App only starts the caller workflow in a
     # target repository; its key is optional so the sweep runs without it.
@@ -361,5 +367,7 @@ module "task_groomer" {
     GROOMER_MONTHLY_CAP_USD   = "GROOMER_MONTHLY_CAP_USD"
     LOGGING_LEVEL             = "LOGGING_LEVEL"
     SENTRY_DSN_COGS           = "SENTRY_DSN_COGS"
+    # Splitting a task into children: off unless true.
+    GROOMER_SPLIT = "GROOMER_SPLIT"
   }
 }
