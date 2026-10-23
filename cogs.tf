@@ -241,6 +241,19 @@ module "task_manager" {
     REFINING_SECTION       = "REFINING_SECTION"
     LOGGING_LEVEL          = "LOGGING_LEVEL"
     SENTRY_DSN_COGS        = "SENTRY_DSN_COGS"
+    # Agent dispatch at the end of the sweep: off unless AGENT_DISPATCH is
+    # true. The agent GitHub App only starts the caller workflow in a
+    # target repository; its key is optional so the sweep runs without it.
+    AGENT_APP_CLIENT_ID       = "AGENT_APP_CLIENT_ID"
+    AGENT_APP_PRIVATE_KEY     = "AGENT_APP_PRIVATE_KEY"
+    AGENT_DISPATCH            = "AGENT_DISPATCH"
+    AGENT_DRY_RUN             = "AGENT_DRY_RUN"
+    AGENT_MODEL               = "AGENT_MODEL"
+    AGENT_MONTHLY_CAP_USD     = "AGENT_MONTHLY_CAP_USD"
+    AGENT_RUN_TIMEOUT_MINUTES = "AGENT_RUN_TIMEOUT_MINUTES"
+    AGENT_TASK_CAP_USD        = "AGENT_TASK_CAP_USD"
+    IN_PROGRESS_SECTION       = "IN_PROGRESS_SECTION"
+    REVIEW_SECTION            = "REVIEW_SECTION"
   }
 }
 
