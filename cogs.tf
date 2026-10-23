@@ -309,6 +309,7 @@ module "watcher" {
     CSV_SOURCE_FOLDER_ID               = "CSV_SOURCE_FOLDER_ID"
     GOOGLE_CREDENTIALS_JSON            = "GOOGLE_CREDENTIALS_JSON"
     GOOGLE_DRIVE_VOICE_INBOX_FOLDER_ID = "GOOGLE_DRIVE_VOICE_INBOX_FOLDER_ID"
+    LIVE_HISTORY_FOLDER_ID             = "LIVE_HISTORY_FOLDER_ID"
     # The silence detector: the one alert that fires when nothing is
     # invoking the function at all. Required, not optional.
     HEALTHCHECKS_URL_WATCHER = "HEALTHCHECKS_URL_WATCHER"
