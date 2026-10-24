@@ -37,7 +37,7 @@ output "watcher" {
 }
 
 locals {
-  # api-kaianolevine-com's CLAIM_WINDOW (services/dispatch_claims.py). The
+  # api-kaianolevine-com's dispatch claim window, behind its run endpoints. The
   # watcher asks for every file on every tick, and the API dispatches a
   # file again once its claim is this old — on the reasoning that its job
   # has by then failed through every retry. That holds only while no job

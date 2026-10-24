@@ -99,7 +99,7 @@ module "transcription" {
   architecture = "arm64"
 
   # The slowest run in four weeks was about 2.4 min, but the timeout is set
-  # by the worst case, not the typical run: voicenotes/config.py budgets
+  # by the worst case, not the typical run: transcription-cog budgets
   # 720 s of Whisper and Claude timeouts plus Drive and the task request for
   # one voice note. Below 900 s a slow but healthy note is killed mid-run and retried.
   timeout_seconds = 900
