@@ -25,6 +25,11 @@ output "function_name" {
   value       = aws_lambda_function.worker.function_name
 }
 
+output "worker_role_name" {
+  description = "The function's execution role, for a grant the module does not make (a cog's reads outside ssm_prefix)."
+  value       = aws_iam_role.worker.name
+}
+
 output "deploy_role_arn" {
   description = "The cog repository's AWS_DEPLOY_ROLE_ARN variable."
   value       = aws_iam_role.deploy.arn
