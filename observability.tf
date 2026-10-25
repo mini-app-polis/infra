@@ -31,8 +31,9 @@ locals {
   dashboard_apis = ["api-kaianolevine-com", "api-deejaytools"]
 
   # Per API, the routes it gives their own Latency series (the `routes`
-  # argument to RequestMetricsMiddleware). Must match what the API
-  # publishes: a route listed here and not there draws an empty line.
+  # argument to RequestMetricsMiddleware). Copies of each API's
+  # METRICS_ROUTES: scripts/check_api_routes.py fails on a route listed
+  # here that the API does not publish (see README, Copied constants).
   dashboard_api_routes = {
     "api-kaianolevine-com" = ["/v1/standards/catalog", "/v1/evaluations"]
     "api-deejaytools" = [

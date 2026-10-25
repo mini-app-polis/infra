@@ -58,13 +58,15 @@ jobs:
       # them, read from their main: main is what they release, and this
       # applies on merge to main. A coordinated change lands in the owner's
       # main first; until it has, these fail and the copy here waits.
-      - name: check out api-kaianolevine-com's dispatch claims
+      - name: check out api-kaianolevine-com's dispatch claims and metrics routes
         uses: actions/checkout@v7
         with:
           repository: mini-app-polis/api-kaianolevine-com
           ref: main
           path: upstream/api-kaianolevine-com
-          sparse-checkout: src/kaianolevine_api/services/dispatch_claims.py
+          sparse-checkout: |
+            src/kaianolevine_api/services/dispatch_claims.py
+            src/kaianolevine_api/main.py
           sparse-checkout-cone-mode: false
           persist-credentials: false
 
@@ -83,6 +85,19 @@ jobs:
 
       - name: scheduled watchers are ones watcher-cog publishes
         run: python3 scripts/check_watcher_names.py upstream/watcher-cog/src/watcher_cog/config.py
+
+      - name: check out api-deejaytools' metrics routes
+        uses: actions/checkout@v7
+        with:
+          repository: mini-app-polis/api-deejaytools
+          ref: main
+          path: upstream/api-deejaytools
+          sparse-checkout: src/api_deejaytools/main.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: dashboard routes are ones their APIs publish
+        run: python3 scripts/check_api_routes.py upstream/api-kaianolevine-com/src/kaianolevine_api/main.py upstream/api-deejaytools/src/api_deejaytools/main.py
 
       - uses: hashicorp/setup-terraform@v4
         with:

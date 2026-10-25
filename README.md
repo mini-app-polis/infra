@@ -100,7 +100,7 @@ repository variables from `terraform output cogs` in the cog's repository.
 
 ## Copied constants
 
-Two values here are copies of ones another repository owns. The `plan` job
+Some values here are copies of ones another repository owns. The `plan` job
 checks each out from the owner's `main` — what it releases, as `main` is
 what this repository applies — and fails when the copy has drifted:
 
@@ -108,6 +108,7 @@ what this repository applies — and fails when the copy has drifted:
 | --- | --- | --- |
 | `local.dispatch_claim_window_seconds` (`outputs.tf`) | `CLAIM_WINDOW`, api-kaianolevine-com `src/kaianolevine_api/services/dispatch_claims.py` | `scripts/check_claim_window.py` |
 | module `watcher`'s `schedule_targets` names (`cogs.tf`) | `get_watchers()`, watcher-cog `src/watcher_cog/config.py` | `scripts/check_watcher_names.py` |
+| `local.dashboard_api_routes` (`observability.tf`) | `METRICS_ROUTES`, api-kaianolevine-com `src/kaianolevine_api/main.py` and api-deejaytools `src/api_deejaytools/main.py` | `scripts/check_api_routes.py` |
 
 To change one, change the owner first and release it to its `main`, then
 change the copy here. A change only on the owner's `dev` fails these checks
@@ -116,6 +117,7 @@ until it reaches `main`. Run a check locally against a clone of the owner:
 ```bash
 python3 scripts/check_claim_window.py ~/git/api-kaianolevine-com/src/kaianolevine_api/services/dispatch_claims.py
 python3 scripts/check_watcher_names.py ~/git/watcher-cog/src/watcher_cog/config.py
+python3 scripts/check_api_routes.py ~/git/api-kaianolevine-com/src/kaianolevine_api/main.py ~/git/api-deejaytools/src/api_deejaytools/main.py
 ```
 
 ## Making a change
