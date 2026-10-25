@@ -394,10 +394,11 @@ module "rotator" {
   handler      = "rotator_cog.worker.lambda_handler"
   architecture = "arm64"
 
-  # A job is one secret: mint the new value, write it to Doppler (and
-  # GitHub or AWS where it is held there too), verify it and record the
-  # rotation, each a short API call.
-  timeout_seconds = 300
+  # A job is one secret: mint the new value and hand it over in Doppler in
+  # two phases, each followed by waiting for Railway to show the value and
+  # for the redeploys to run, then verify and record. Those waits are
+  # minutes, so Lambda's ceiling.
+  timeout_seconds = 900
   memory_mb       = 256
 
   # Serialised: two rotations writing the same Doppler config would race.
