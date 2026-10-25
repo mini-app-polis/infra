@@ -408,12 +408,23 @@ module "rotator" {
   reserved_concurrency = 1
   max_receive_count    = 1
 
+  # The daily sweep, one message per Doppler config the rotator holds a
+  # token for: each rotates what is due in that config. Anything urgent is
+  # asked for on demand through the API instead.
+  schedules = {
+    for config in keys(local.rotator_doppler_token_parameters) : "sweep-${config}" => {
+      expression = "cron(0 14 * * ? *)"
+      body       = jsonencode({ type = "rotation.sweep", version = 1, payload = { config = config } })
+    }
+  }
+
   # Where its Doppler and Railway tokens are: the names only, never the
   # values.
   environment = {
     DOPPLER_TOKEN_PRD_PARAMETER = local.rotator_doppler_token_parameters.prd
     DOPPLER_TOKEN_DEV_PARAMETER = local.rotator_doppler_token_parameters.dev
-    RAILWAY_TOKEN_PARAMETER     = local.rotator_railway_token_parameter
+    RAILWAY_TOKEN_PRD_PARAMETER = local.rotator_railway_token_parameters.prd
+    RAILWAY_TOKEN_DEV_PARAMETER = local.rotator_railway_token_parameters.dev
   }
 
   ssm_parameters = {
@@ -439,19 +450,25 @@ locals {
     dev = "/rotator/DOPPLER_TOKEN_DEV"
   }
 
-  # The Railway token it redeploys the services that read a rotated secret
-  # at boot with. Put by hand like the Doppler tokens, for the same reason.
-  rotator_railway_token_parameter = "/rotator/RAILWAY_TOKEN"
+  # The Railway tokens it redeploys the services that read a rotated secret
+  # at boot with: project tokens, and a project token reaches one
+  # environment, so one per config as for Doppler (prd is the production
+  # environment, dev development). Put by hand like the Doppler tokens, for
+  # the same reason.
+  rotator_railway_token_parameters = {
+    prd = "/rotator/RAILWAY_TOKEN_PRD"
+    dev = "/rotator/RAILWAY_TOKEN_DEV"
+  }
 }
 
-# Those three parameters, by name, and nothing else outside the module's own
+# Those four parameters, by name, and nothing else outside the module's own
 # grant. No KMS grant: they are SecureStrings under the AWS-managed aws/ssm
 # key, as the synced ones are.
 data "aws_iam_policy_document" "rotator_doppler_token" {
   statement {
     actions = ["ssm:GetParameter", "ssm:GetParameters"]
     resources = [
-      for name in concat(values(local.rotator_doppler_token_parameters), [local.rotator_railway_token_parameter]) :
+      for name in concat(values(local.rotator_doppler_token_parameters), values(local.rotator_railway_token_parameters)) :
       "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter${name}"
     ]
   }
