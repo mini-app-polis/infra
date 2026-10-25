@@ -83,9 +83,9 @@ output "rotator_doppler_token_parameters" {
   value       = local.rotator_doppler_token_parameters
 }
 
-output "rotator_railway_token_parameter" {
-  description = "Put the rotator's Railway token here by hand, as a SecureString (see the README)."
-  value       = local.rotator_railway_token_parameter
+output "rotator_railway_token_parameters" {
+  description = "Put each Railway project token here by hand, as a SecureString (see the README)."
+  value       = local.rotator_railway_token_parameters
 }
 
 output "ci_roles" {
