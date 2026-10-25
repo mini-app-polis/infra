@@ -36,6 +36,9 @@ one Terraform root with one state:
 - `outputs.tf` — besides each cog's repository variables, a plan-time check
   that api-kaianolevine-com's six-hour dispatch claim window outlasts every
   cog's longest possible job
+- `scripts/check_*.py` — CI checks that the values this configuration
+  copies from other repositories still match their owners' main (see
+  [Copied constants](#copied-constants))
 
 Cog repositories own their **code** and deploy it (`lambda-deploy.yml`,
 `UpdateFunctionCode` only). This repository owns everything else.
@@ -94,6 +97,26 @@ Add a `module` block to `cogs.tf`, list its secrets by name (their values go
 in Doppler), add it to the `cogs` output and `cog_max_in_flight_seconds` in
 `outputs.tf`, apply, confirm the alert subscription email, and set the three
 repository variables from `terraform output cogs` in the cog's repository.
+
+## Copied constants
+
+Two values here are copies of ones another repository owns. The `plan` job
+checks each out from the owner's `main` — what it releases, as `main` is
+what this repository applies — and fails when the copy has drifted:
+
+| Copy | Owner | Check |
+| --- | --- | --- |
+| `local.dispatch_claim_window_seconds` (`outputs.tf`) | `CLAIM_WINDOW`, api-kaianolevine-com `src/kaianolevine_api/services/dispatch_claims.py` | `scripts/check_claim_window.py` |
+| module `watcher`'s `schedule_targets` names (`cogs.tf`) | `get_watchers()`, watcher-cog `src/watcher_cog/config.py` | `scripts/check_watcher_names.py` |
+
+To change one, change the owner first and release it to its `main`, then
+change the copy here. A change only on the owner's `dev` fails these checks
+until it reaches `main`. Run a check locally against a clone of the owner:
+
+```bash
+python3 scripts/check_claim_window.py ~/git/api-kaianolevine-com/src/kaianolevine_api/services/dispatch_claims.py
+python3 scripts/check_watcher_names.py ~/git/watcher-cog/src/watcher_cog/config.py
+```
 
 ## Making a change
 
