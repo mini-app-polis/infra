@@ -99,6 +99,19 @@ jobs:
       - name: dashboard routes are ones their APIs publish
         run: python3 scripts/check_api_routes.py upstream/api-kaianolevine-com/src/kaianolevine_api/main.py upstream/api-deejaytools/src/api_deejaytools/main.py
 
+      - name: check out rotator-cog's secrets inventory
+        uses: actions/checkout@v7
+        with:
+          repository: mini-app-polis/rotator-cog
+          ref: main
+          path: upstream/rotator-cog
+          sparse-checkout: secrets/inventory.yaml
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: the rotator's IAM users are the ones its inventory rotates
+        run: python3 scripts/check_rotator_iam_users.py upstream/rotator-cog/secrets/inventory.yaml
+
       - uses: hashicorp/setup-terraform@v4
         with:
           # Match the workstation, so fmt agrees and the state's version
