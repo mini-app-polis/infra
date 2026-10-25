@@ -98,6 +98,25 @@ in Doppler), add it to the `cogs` output and `cog_max_in_flight_seconds` in
 `outputs.tf`, apply, confirm the alert subscription email, and set the three
 repository variables from `terraform output cogs` in the cog's repository.
 
+## rotator-cog's Doppler tokens
+
+rotator-cog writes new secret values into Doppler, so its worker holds two
+Doppler service tokens, one for the `prd` config and one for `dev`. They
+live outside `/mini-app-polis/` (`terraform output
+rotator_doppler_token_parameters`), so Doppler's sync role and the other
+workers' grants never reach them; the `rotator-worker` role may read those
+two parameters and nothing else outside its own list.
+
+They are put by hand, not declared in Terraform: Terraform reads a
+parameter it manages back on every plan, decrypted, and `infra-plan` may
+read no parameter but the alert address. Mint each token in Doppler, then:
+
+```bash
+export AWS_PROFILE=miniapppolis
+read -rs -p "prd token: " token && printf '%s' "$token" | aws ssm put-parameter --name /rotator/DOPPLER_TOKEN_PRD --type SecureString --overwrite --value file:///dev/stdin; unset token
+read -rs -p "dev token: " token && printf '%s' "$token" | aws ssm put-parameter --name /rotator/DOPPLER_TOKEN_DEV --type SecureString --overwrite --value file:///dev/stdin; unset token
+```
+
 ## Copied constants
 
 Some values here are copies of ones another repository owns. The `plan` job

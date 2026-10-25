@@ -13,6 +13,7 @@ output "cogs" {
       "wiki-curator" = module.wiki_curator
       "task-manager" = module.task_manager
       "task-groomer" = module.task_groomer
+      rotator        = module.rotator
     } :
     name => {
       AWS_DEPLOY_ROLE_ARN = m.deploy_role_arn
@@ -75,6 +76,11 @@ output "dispatch_claim_headroom_seconds" {
 output "producer_user_name" {
   description = "Mint its access key by hand, straight into Doppler."
   value       = aws_iam_user.producer.name
+}
+
+output "rotator_doppler_token_parameters" {
+  description = "Put each Doppler service token here by hand, as a SecureString (see the README)."
+  value       = local.rotator_doppler_token_parameters
 }
 
 output "ci_roles" {

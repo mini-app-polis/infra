@@ -16,7 +16,9 @@
 # local runs use it through `doppler run`.
 
 locals {
-  # Everything the fleet's workers read lives under this prefix.
+  # Everything the fleet's workers read lives under this prefix, but for
+  # rotator-cog's own Doppler tokens (cogs.tf), kept outside it so this
+  # role cannot reach them.
   ssm_prefix = "mini-app-polis"
 }
 

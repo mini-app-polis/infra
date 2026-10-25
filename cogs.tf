@@ -373,3 +373,86 @@ module "task_groomer" {
     GROOMER_SPLIT = "GROOMER_SPLIT"
   }
 }
+
+# Rotates the fleet's secrets and records each rotation (rotator-cog). It
+# writes new values into Doppler, so it holds Doppler tokens of its own,
+# one per config it rotates, kept outside the prefix Doppler syncs (below).
+# The API enqueues its jobs through the producer's `*-jobs` grant
+# (account.tf), as for every cog.
+module "rotator" {
+  source = "./modules/cog-worker"
+
+  name                     = "rotator"
+  github_repo              = "mini-app-polis/rotator-cog"
+  github_oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
+  alert_email              = local.alert_email
+  api_base_url             = var.kaiano_api_base_url
+
+  # Created with GitHub's immutable OIDC subjects, as task-manager-cog was.
+  github_oidc_subject = "repo:mini-app-polis@270520182/rotator-cog@1433517907"
+
+  handler      = "rotator_cog.worker.lambda_handler"
+  architecture = "arm64"
+
+  # A job is one secret: mint the new value, write it to Doppler (and
+  # GitHub or AWS where it is held there too), verify it and record the
+  # rotation, each a short API call.
+  timeout_seconds = 300
+  memory_mb       = 256
+
+  # Serialised: two rotations writing the same Doppler config would race.
+  # FIFO with one message group, as deejay. One delivery: a rotation that
+  # fails partway has left something half-rotated that needs a person, so
+  # it is dead-lettered and alarmed rather than tried again.
+  fifo                 = true
+  reserved_concurrency = 1
+  max_receive_count    = 1
+
+  # Where its Doppler tokens are: the names only, never the values.
+  environment = {
+    DOPPLER_TOKEN_PRD_PARAMETER = local.rotator_doppler_token_parameters.prd
+    DOPPLER_TOKEN_DEV_PARAMETER = local.rotator_doppler_token_parameters.dev
+  }
+
+  ssm_parameters = {
+    ROTATOR_COG_API_KEY = "ROTATOR_COG_API_KEY"
+  }
+  ssm_optional_parameters = {
+    LOGGING_LEVEL   = "LOGGING_LEVEL"
+    SENTRY_DSN_COGS = "SENTRY_DSN_COGS"
+  }
+}
+
+# The rotator's two Doppler tokens: one for the prd config, one for dev.
+# Outside /mini-app-polis/, so neither Doppler's sync role nor any worker's
+# grant on that prefix reaches them, and readable by the rotator's role
+# alone (infra-plan's deny in ci.tf already covers them).
+#
+# Put by hand, not declared here: Terraform reads a parameter it manages
+# back, decrypted, on every plan, and infra-plan may read none but the
+# alert address. See the README.
+locals {
+  rotator_doppler_token_parameters = {
+    prd = "/rotator/DOPPLER_TOKEN_PRD"
+    dev = "/rotator/DOPPLER_TOKEN_DEV"
+  }
+}
+
+# Those two parameters, by name, and nothing else outside the module's own
+# grant. No KMS grant: they are SecureStrings under the AWS-managed aws/ssm
+# key, as the synced ones are.
+data "aws_iam_policy_document" "rotator_doppler_token" {
+  statement {
+    actions = ["ssm:GetParameter", "ssm:GetParameters"]
+    resources = [
+      for name in values(local.rotator_doppler_token_parameters) :
+      "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter${name}"
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "rotator_doppler_token" {
+  name   = "rotator-doppler-token"
+  role   = module.rotator.worker_role_name
+  policy = data.aws_iam_policy_document.rotator_doppler_token.json
+}
