@@ -31,8 +31,6 @@ one Terraform root with one state:
   for the APIs and cogs, `mini-app-polis-data` for the databases
 - `cloudflare*.tf` — the Cloudflare zones, DNS, Pages projects, rules, bot
   management and Turnstile (see [Cloudflare](#cloudflare))
-- `secrets/` — the inventory of every credential the fleet holds, the
-  record of rotations, and the runbook; `scripts/rotate.py` rotates them
 - `outputs.tf` — besides each cog's repository variables, a plan-time check
   that api-kaianolevine-com's six-hour dispatch claim window outlasts every
   cog's longest possible job
