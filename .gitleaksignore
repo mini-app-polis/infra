@@ -2,5 +2,7 @@
 #
 # AWS access key ids (not secrets on their own) that scripts/rotate.py
 # recorded in the ledger before it kept only the last four characters.
+# The files have moved to mini-app-polis/rotator-cog, but these findings
+# stay in this repository's history, which the secret scan reads in full.
 e21c8725c9816e5dc7599b626e579f126d599f6c:secrets/rotations.jsonl:aws-access-token:74
 e21c8725c9816e5dc7599b626e579f126d599f6c:secrets/rotations.jsonl:aws-access-token:75
