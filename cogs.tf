@@ -434,6 +434,8 @@ module "rotator" {
   ssm_optional_parameters = {
     LOGGING_LEVEL   = "LOGGING_LEVEL"
     SENTRY_DSN_COGS = "SENTRY_DSN_COGS"
+    # The daily sweep rotates what is due only when this is true.
+    ROTATOR_SWEEP_ROTATE = "ROTATOR_SWEEP_ROTATE"
   }
 }
 
