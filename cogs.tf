@@ -456,3 +456,47 @@ resource "aws_iam_role_policy" "rotator_doppler_token" {
   role   = module.rotator.worker_role_name
   policy = data.aws_iam_policy_document.rotator_doppler_token.json
 }
+
+# The IAM users whose access keys the rotator rotates, by name. rotator-cog's
+# secrets/inventory.yaml owns which they are (the iam_user of each
+# aws-access-key entry); scripts/check_rotator_iam_users.py fails CI when
+# this differs from it. Each is a user this root declares for one Railway
+# service's long-lived key, none of them an identity that can change IAM.
+locals {
+  rotator_iam_users = {
+    "db-backup-reader"   = aws_iam_user.db_backup_reader
+    "db-backup-writer"   = aws_iam_user.db_backup_writer
+    "db-poller"          = aws_iam_user.db_poller
+    "evaluator-producer" = aws_iam_user.producer
+  }
+}
+
+# Mint, deactivate, delete and list those users' access keys, on their ARNs
+# alone: nothing over any other user, nor over its own role or policies.
+# Holding this, the rotator can act as any of them, so each user's own
+# policy is the bound on what that means.
+data "aws_iam_policy_document" "rotator_access_keys" {
+  statement {
+    actions = [
+      "iam:CreateAccessKey",
+      "iam:DeleteAccessKey",
+      "iam:ListAccessKeys",
+      "iam:UpdateAccessKey",
+    ]
+    resources = [for user in values(local.rotator_iam_users) : user.arn]
+  }
+}
+
+resource "aws_iam_role_policy" "rotator_access_keys" {
+  name   = "rotator-access-keys"
+  role   = module.rotator.worker_role_name
+  policy = data.aws_iam_policy_document.rotator_access_keys.json
+
+  lifecycle {
+    # The check script compares the names; this keeps each name the user's.
+    precondition {
+      condition     = alltrue([for name, user in local.rotator_iam_users : user.name == name])
+      error_message = "A key of local.rotator_iam_users is not the name of the aws_iam_user it maps to."
+    }
+  }
+}
