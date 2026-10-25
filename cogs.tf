@@ -408,10 +408,12 @@ module "rotator" {
   reserved_concurrency = 1
   max_receive_count    = 1
 
-  # Where its Doppler tokens are: the names only, never the values.
+  # Where its Doppler and Railway tokens are: the names only, never the
+  # values.
   environment = {
     DOPPLER_TOKEN_PRD_PARAMETER = local.rotator_doppler_token_parameters.prd
     DOPPLER_TOKEN_DEV_PARAMETER = local.rotator_doppler_token_parameters.dev
+    RAILWAY_TOKEN_PARAMETER     = local.rotator_railway_token_parameter
   }
 
   ssm_parameters = {
@@ -436,16 +438,20 @@ locals {
     prd = "/rotator/DOPPLER_TOKEN_PRD"
     dev = "/rotator/DOPPLER_TOKEN_DEV"
   }
+
+  # The Railway token it redeploys the services that read a rotated secret
+  # at boot with. Put by hand like the Doppler tokens, for the same reason.
+  rotator_railway_token_parameter = "/rotator/RAILWAY_TOKEN"
 }
 
-# Those two parameters, by name, and nothing else outside the module's own
+# Those three parameters, by name, and nothing else outside the module's own
 # grant. No KMS grant: they are SecureStrings under the AWS-managed aws/ssm
 # key, as the synced ones are.
 data "aws_iam_policy_document" "rotator_doppler_token" {
   statement {
     actions = ["ssm:GetParameter", "ssm:GetParameters"]
     resources = [
-      for name in values(local.rotator_doppler_token_parameters) :
+      for name in concat(values(local.rotator_doppler_token_parameters), [local.rotator_railway_token_parameter]) :
       "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter${name}"
     ]
   }

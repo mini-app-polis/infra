@@ -96,7 +96,7 @@ in Doppler), add it to the `cogs` output and `cog_max_in_flight_seconds` in
 `outputs.tf`, apply, confirm the alert subscription email, and set the three
 repository variables from `terraform output cogs` in the cog's repository.
 
-## rotator-cog's Doppler tokens
+## rotator-cog's tokens
 
 rotator-cog writes new secret values into Doppler, so its worker holds two
 Doppler service tokens, one for the `prd` config and one for `dev`. They
@@ -113,6 +113,15 @@ read no parameter but the alert address. Mint each token in Doppler, then:
 export AWS_PROFILE=miniapppolis
 read -rs -p "prd token: " token && printf '%s' "$token" | aws ssm put-parameter --name /rotator/DOPPLER_TOKEN_PRD --type SecureString --overwrite --value file:///dev/stdin; unset token
 read -rs -p "dev token: " token && printf '%s' "$token" | aws ssm put-parameter --name /rotator/DOPPLER_TOKEN_DEV --type SecureString --overwrite --value file:///dev/stdin; unset token
+```
+
+It also redeploys the Railway services that read a rotated secret at boot,
+with a Railway token of its own at `/rotator/RAILWAY_TOKEN` (`terraform
+output rotator_railway_token_parameter`), readable by the same role and put
+the same way:
+
+```bash
+read -rs -p "Railway token: " token && printf '%s' "$token" | aws ssm put-parameter --name /rotator/RAILWAY_TOKEN --type SecureString --overwrite --value file:///dev/stdin; unset token
 ```
 
 ## Copied constants

@@ -83,6 +83,11 @@ output "rotator_doppler_token_parameters" {
   value       = local.rotator_doppler_token_parameters
 }
 
+output "rotator_railway_token_parameter" {
+  description = "Put the rotator's Railway token here by hand, as a SecureString (see the README)."
+  value       = local.rotator_railway_token_parameter
+}
+
 output "ci_roles" {
   description = "Repository variables for this repo's workflow: AWS_PLAN_ROLE_ARN and AWS_APPLY_ROLE_ARN."
   value = {
