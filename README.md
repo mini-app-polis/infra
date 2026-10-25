@@ -116,12 +116,15 @@ read -rs -p "dev token: " token && printf '%s' "$token" | aws ssm put-parameter 
 ```
 
 It also redeploys the Railway services that read a rotated secret at boot,
-with a Railway token of its own at `/rotator/RAILWAY_TOKEN` (`terraform
-output rotator_railway_token_parameter`), readable by the same role and put
-the same way:
+with Railway project tokens of its own. A project token reaches one
+environment, so there are two: `/rotator/RAILWAY_TOKEN_PRD` for production
+and `/rotator/RAILWAY_TOKEN_DEV` for development (`terraform output
+rotator_railway_token_parameters`), readable by the same role and put the
+same way:
 
 ```bash
-read -rs -p "Railway token: " token && printf '%s' "$token" | aws ssm put-parameter --name /rotator/RAILWAY_TOKEN --type SecureString --overwrite --value file:///dev/stdin; unset token
+read -rs -p "Railway production token: " token && printf '%s' "$token" | aws ssm put-parameter --name /rotator/RAILWAY_TOKEN_PRD --type SecureString --overwrite --value file:///dev/stdin; unset token
+read -rs -p "Railway development token: " token && printf '%s' "$token" | aws ssm put-parameter --name /rotator/RAILWAY_TOKEN_DEV --type SecureString --overwrite --value file:///dev/stdin; unset token
 ```
 
 ## Copied constants
