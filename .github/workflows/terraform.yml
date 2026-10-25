@@ -54,6 +54,36 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Constants this configuration copies from the repositories that own
+      # them, read from their main: main is what they release, and this
+      # applies on merge to main. A coordinated change lands in the owner's
+      # main first; until it has, these fail and the copy here waits.
+      - name: check out api-kaianolevine-com's dispatch claims
+        uses: actions/checkout@v7
+        with:
+          repository: mini-app-polis/api-kaianolevine-com
+          ref: main
+          path: upstream/api-kaianolevine-com
+          sparse-checkout: src/kaianolevine_api/services/dispatch_claims.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: claim window matches the API's CLAIM_WINDOW
+        run: python3 scripts/check_claim_window.py upstream/api-kaianolevine-com/src/kaianolevine_api/services/dispatch_claims.py
+
+      - name: check out watcher-cog's watchers
+        uses: actions/checkout@v7
+        with:
+          repository: mini-app-polis/watcher-cog
+          ref: main
+          path: upstream/watcher-cog
+          sparse-checkout: src/watcher_cog/config.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: scheduled watchers are ones watcher-cog publishes
+        run: python3 scripts/check_watcher_names.py upstream/watcher-cog/src/watcher_cog/config.py
+
       - uses: hashicorp/setup-terraform@v4
         with:
           # Match the workstation, so fmt agrees and the state's version

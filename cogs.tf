@@ -286,7 +286,8 @@ module "watcher" {
   # One invocation per folder every minute, so a slow or failing folder
   # cannot spend the others' 50s or fail their tick. The names are
   # watcher-cog's get_watchers() names; an unknown one fails its invocation
-  # loudly rather than watching nothing. All four ping the one Healthchecks
+  # loudly rather than watching nothing, and scripts/check_watcher_names.py
+  # fails CI on one before it ships. All four ping the one Healthchecks
   # check, which only catches the schedule stopping; the error alarm below
   # is what notices a single folder failing.
   schedule_targets = {

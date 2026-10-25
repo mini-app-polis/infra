@@ -42,6 +42,10 @@ locals {
   # file again once its claim is this old — on the reasoning that its job
   # has by then failed through every retry. That holds only while no job
   # can still be in flight after this long.
+  #
+  # A copy of CLAIM_WINDOW in the API's
+  # src/kaianolevine_api/services/dispatch_claims.py, which owns it. CI's
+  # scripts/check_claim_window.py fails the plan when the two differ.
   dispatch_claim_window_seconds = 6 * 3600
 
   cog_max_in_flight_seconds = {
@@ -64,7 +68,7 @@ output "dispatch_claim_headroom_seconds" {
       for seconds in values(local.cog_max_in_flight_seconds) :
       seconds < local.dispatch_claim_window_seconds
     ])
-    error_message = "A cog's queue can hold a job in flight longer than the API's six-hour dispatch claim window, so the watcher would dispatch a file that is still being retried. Shorten that cog's timeout or max_receive_count, or lengthen CLAIM_WINDOW in api-kaianolevine-com and dispatch_claim_window_seconds here together."
+    error_message = "A cog's queue can hold a job in flight longer than the API's six-hour dispatch claim window, so the watcher would dispatch a file that is still being retried. Shorten that cog's timeout or max_receive_count, or lengthen CLAIM_WINDOW in api-kaianolevine-com and dispatch_claim_window_seconds here together (scripts/check_claim_window.py fails CI while they differ)."
   }
 }
 
