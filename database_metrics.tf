@@ -3,7 +3,7 @@
 # db-poller (mini-app-polis/db-ops) reads each database every five minutes
 # and publishes under the MiniAppPolis/Postgres namespace. It runs on Railway
 # beside the databases rather than as a Lambda, so it reaches them over
-# private networking (db-ops ADR-001); that is why it needs a long-lived key
+# private networking (db-ops ADR-0001); that is why it needs a long-lived key
 # rather than a role. Their alarms are below; their dashboard,
 # mini-app-polis-data, is in observability.tf.
 #

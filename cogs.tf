@@ -132,7 +132,7 @@ module "transcription" {
   }
 }
 
-# The wiki curator's worker (wiki-curator-cog ADR-006). One job per
+# The wiki curator's worker (wiki-curator-cog ADR-0006). One job per
 # message: link one source, consolidate named entities, or generate named
 # entities' prose. The API enqueues a link when a source is composed (behind
 # flags.wcs.wiki_jobs_enabled, off until switched on) and the follow-ons each
