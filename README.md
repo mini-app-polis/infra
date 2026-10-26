@@ -228,6 +228,10 @@ neither token.
 
 ## Why Terraform, not CloudFormation/SAM/CDK
 
+The first decision record for the fleet's AWS foundation (region, one
+queue and one function per cog, the Terraform choice) is
+[docs/aws-foundation.md](docs/aws-foundation.md).
+
 CloudFormation would hold state for us and roll failed updates back
 atomically. Terraform was kept because:
 

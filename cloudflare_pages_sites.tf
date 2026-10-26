@@ -75,13 +75,17 @@ locals {
       build_command       = "npm run build"
       compatibility_date  = "2024-09-23"
       compatibility_flags = ["nodejs_compat"]
+      # KAIANO_API_BASE_URL is the name the site read before it moved to
+      # PUBLIC_API_URL. Both are set until every live build reads the new one.
       production_env = {
         KAIANO_API_BASE_URL          = local.doppler["KAIANO_API_BASE_URL"]
+        PUBLIC_API_URL               = local.doppler["PUBLIC_API_URL"]
         PUBLIC_CLERK_PUBLISHABLE_KEY = local.doppler["PUBLIC_CLERK_PUBLISHABLE_KEY"]
         PUBLIC_TURNSTILE_SITE_KEY    = local.doppler["PUBLIC_TURNSTILE_SITE_KEY"]
       }
       preview_env = {
         KAIANO_API_BASE_URL          = local.doppler["KAIANO_API_BASE_URL_DEV"]
+        PUBLIC_API_URL               = local.doppler["KAIANO_API_BASE_URL_DEV"]
         PUBLIC_CLERK_PUBLISHABLE_KEY = local.doppler["PUBLIC_CLERK_PUBLISHABLE_KEY_DEV"]
         PUBLIC_TURNSTILE_SITE_KEY    = local.doppler["PUBLIC_TURNSTILE_SITE_KEY"]
       }
@@ -94,9 +98,13 @@ locals {
       compatibility_flags = []
       production_env = {
         GOOGLE_CALENDAR_PUBLIC_API_KEY = local.doppler["GOOGLE_CALENDAR_PUBLIC_API_KEY"]
+        PUBLIC_API_URL                 = local.doppler["PUBLIC_API_URL"]
+        PUBLIC_TURNSTILE_SITE_KEY      = local.doppler["PUBLIC_TURNSTILE_SITE_KEY"]
       }
       preview_env = {
         GOOGLE_CALENDAR_PUBLIC_API_KEY = local.doppler["GOOGLE_CALENDAR_PUBLIC_API_KEY"]
+        PUBLIC_API_URL                 = local.doppler["KAIANO_API_BASE_URL_DEV"]
+        PUBLIC_TURNSTILE_SITE_KEY      = local.doppler["PUBLIC_TURNSTILE_SITE_KEY"]
       }
     }
     "website-astro-software" = {
