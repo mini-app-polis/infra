@@ -26,6 +26,10 @@ module "evaluator" {
   # retried, but a retry still has to fit inside the 300s timeout.
   max_concurrency = 20
 
+  # Reads its own Doppler project, evaluator-cog (README.md, "Doppler
+  # layout"); the names below say which vault value each one references.
+  own_doppler_config = true
+
   # GITHUB_TOKEN is the name the code reads; its value is the fleet's one
   # read-only GitHub token, GITHUB_DASHBOARD_TOKEN.
   ssm_parameters = {
