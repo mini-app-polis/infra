@@ -76,6 +76,10 @@ module "deejay" {
     VDJ_HISTORY_FOLDER_ID = "1HGxEr5ocY9JLtXcJqDRIOD95rXU6QLUW"
   }
 
+  # Reads its own Doppler project, deejay-cog (README.md, "Doppler
+  # layout"); the names below say which vault value each one references.
+  own_doppler_config = true
+
   ssm_parameters = {
     DEEJAY_COG_API_KEY      = "DEEJAY_COG_API_KEY"
     GOOGLE_CREDENTIALS_JSON = "GOOGLE_CREDENTIALS_JSON"
@@ -113,6 +117,10 @@ module "transcription" {
   fifo                 = true
   reserved_concurrency = 1
   max_receive_count    = 3
+
+  # Reads its own Doppler project, transcription-cog (README.md, "Doppler
+  # layout"); the names below say which vault value each one references.
+  own_doppler_config = true
 
   ssm_parameters = {
     ANTHROPIC_API_KEY                  = "ANTHROPIC_API_KEY"
@@ -174,6 +182,10 @@ module "wiki_curator" {
   max_concurrency   = 2
   max_receive_count = 3
 
+  # Reads its own Doppler project, wiki-curator-cog (README.md, "Doppler
+  # layout"); the names below say which vault value each one references.
+  own_doppler_config = true
+
   ssm_parameters = {
     ANTHROPIC_API_KEY        = "ANTHROPIC_API_KEY"
     WIKI_CURATOR_COG_API_KEY = "WIKI_CURATOR_COG_API_KEY"
@@ -228,6 +240,10 @@ module "task_manager" {
       body       = jsonencode({ type = "task.sweep", version = 1 })
     }
   }
+
+  # Reads its own Doppler project, task-manager-cog (README.md, "Doppler
+  # layout"); the names below say which vault value each one references.
+  own_doppler_config = true
 
   ssm_parameters = {
     ASANA_ACCESS_TOKEN       = "ASANA_ACCESS_TOKEN"
@@ -364,6 +380,10 @@ module "task_groomer" {
   # spending its one delivery.
   max_concurrency = 2
 
+  # Reads its own Doppler project, task-groomer-cog (README.md, "Doppler
+  # layout"); the names below say which vault value each one references.
+  own_doppler_config = true
+
   ssm_parameters = {
     ANTHROPIC_API_KEY        = "ANTHROPIC_API_KEY"
     TASK_GROOMER_COG_API_KEY = "TASK_GROOMER_COG_API_KEY"
@@ -435,6 +455,10 @@ module "rotator" {
     RAILWAY_TOKEN_PRD_PARAMETER = local.rotator_railway_token_parameters.prd
     RAILWAY_TOKEN_DEV_PARAMETER = local.rotator_railway_token_parameters.dev
   }
+
+  # Reads its own Doppler project, rotator-cog (README.md, "Doppler
+  # layout"); the names below say which vault value each one references.
+  own_doppler_config = true
 
   ssm_parameters = {
     ROTATOR_COG_API_KEY = "ROTATOR_COG_API_KEY"
