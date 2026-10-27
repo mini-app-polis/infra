@@ -96,7 +96,7 @@ locals {
       "deejaytools-com" = {
         repo        = "deejaytools-com"
         environment = null
-        secrets     = { CONTRACT_CLERK_SECRET_KEY = "prd.CONTRACT_CLERK_SECRET_KEY" }
+        secrets     = { CONTRACT_CLERK_SECRET_KEY = "dev.DEEJAYTOOLS_CLERK_SECRET_KEY" }
         variables = {
           CONTRACT_API_URL = "prd.DEEJAYTOOLS_API_DEV"
           CONTRACT_USER_ID = "prd.CONTRACT_USER_ID"
