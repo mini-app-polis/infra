@@ -3,9 +3,11 @@
 #
 # mini-app-polis-ecosystem (prd and dev) is the vault: every value is
 # edited there, once, and rotator-cog and rotate.py write only there. A
-# consumer's project holds references to it (${mini-app-polis-ecosystem.prd.NAME}),
-# under the names its code reads, and its syncs carry only those. A change
-# in the vault re-syncs every config that references it.
+# consumer's project holds references to it
+# (${mini-app-polis-ecosystem.prd.NAME}), under the names its code reads,
+# and its syncs carry only those. A change in the vault re-syncs every
+# config that references it. The one value kept outside it is Spotify's
+# refresh token (spotify.tf).
 #
 # Terraform owns the projects and the syncs, never a secret: a
 # doppler_secret resource keeps the value it resolves to in state, so the
@@ -136,7 +138,10 @@ locals {
           config  = config
           refs = {
             for name, source in consumer[config] :
-            name => { ref = "$${${local.vault}.${config}.${source}}", visibility = null }
+            name => {
+              ref        = contains(local.spotify_names, source) ? "$${${local.spotify}.prd.${source}}" : "$${${local.vault}.${config}.${source}}"
+              visibility = null
+            }
           }
         }
       ]
