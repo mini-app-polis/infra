@@ -130,6 +130,13 @@ locals {
         variables   = {}
         literals    = {}
       }
+      "kwalla-dance" = {
+        repo        = "kwalla-dance"
+        environment = null
+        secrets     = { CLOUDFLARE_DEPLOY_HOOK = "prd.KWALLA_DANCE_CLOUDFLARE_DEPLOY_HOOK" }
+        variables   = {}
+        literals    = {}
+      }
       "wcs-wiki" = {
         repo        = "wcs-wiki"
         environment = null

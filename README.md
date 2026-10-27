@@ -146,7 +146,8 @@ consumer's code reads it, and the consumer's syncs carry only those. A
 change in the vault re-syncs every config that references it.
 
 A consumer's config may also hold values of its own that are not
-references: the rotator's Railway tokens (above) are the only ones.
+references, such as the rotator's Railway tokens (above), or a setting
+only one environment of one service changes from its code default.
 `scripts/doppler_references.py --prune` never deletes one.
 
 So far the Lambda workers and this root have projects. Each one's `prd`
