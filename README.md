@@ -165,7 +165,9 @@ secrets and variables are its project's `ci` environment, synced to the
 repository: masked values as Actions secrets, unmasked ones as Actions
 variables. A GitHub environment's are `ci-<name>` (infra's `production`).
 What the whole organisation reads is the `github-org` project, synced to
-organisation secrets and variables. Values this root produces (role ARNs,
+organisation secrets and variables. Its Dependabot secrets, which runs started
+by Dependabot read instead, come from `agent-github`'s `dependabot` config,
+whose sync was made in the dashboard; its values are references too. Values this root produces (role ARNs,
 function names) are not secrets and are written by Terraform; everything
 else is a reference into the vault. Nothing in GitHub is set by hand.
 

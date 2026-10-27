@@ -34,6 +34,7 @@ import json
 import os
 import re
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -45,6 +46,18 @@ REFERENCE = re.compile(r"^\$\{([^.}]+)\.([^.}]+)\.([^.}]+)\}$")
 ANY_REFERENCE = re.compile(r"^\$\{([^}]+)\}$")
 # Doppler adds these to every config; they are not ours to set or prune.
 BUILTIN = {"DOPPLER_PROJECT", "DOPPLER_CONFIG", "DOPPLER_ENVIRONMENT"}
+
+
+def _error_detail(error: urllib.error.HTTPError) -> str:
+    """Doppler's error messages, which name the problem and carry no values,
+    or a note that the answer was not Doppler's API: a gateway's HTML page
+    says nothing worth printing."""
+    body = error.read().decode(errors="replace")
+    try:
+        messages = json.loads(body).get("messages")
+    except (ValueError, AttributeError):
+        return "not a Doppler API response (an outage at its edge); run again"
+    return "; ".join(str(m) for m in messages) if messages else body[:300]
 
 
 class Doppler:
@@ -67,13 +80,19 @@ class Doppler:
                 "Content-Type": "application/json",
             },
         )
-        try:
-            with urllib.request.urlopen(request, timeout=30) as response:
-                return json.load(response)
-        except urllib.error.HTTPError as error:
-            # Doppler's error body names the problem and carries no values.
-            detail = error.read().decode(errors="replace")[:500]
-            raise SystemExit(f"{method} {path} {query or ''}: HTTP {error.code}: {detail}") from None
+        # Every request is safe to repeat: reads, and writes of whole values.
+        # So a gateway error (Doppler's edge answering for it) is tried
+        # once more before it fails the config.
+        for attempt in (1, 2):
+            try:
+                with urllib.request.urlopen(request, timeout=30) as response:
+                    return json.load(response)
+            except urllib.error.HTTPError as error:
+                if error.code in (502, 503, 504) and attempt == 1:
+                    time.sleep(3)
+                    continue
+                raise SystemExit(f"{method} {path} {query or ''}: HTTP {error.code}: {_error_detail(error)}") from None
+        raise AssertionError("unreachable")
 
     def names(self, project: str, config: str) -> set[str]:
         key = (project, config)
