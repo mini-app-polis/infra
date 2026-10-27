@@ -124,13 +124,33 @@ resource "doppler_secrets_sync_aws_parameter_store" "consumer" {
 
 # ── References, written by scripts/doppler_references.py ─────────────────
 
+locals {
+  # Every config's references, one entry per config: the Parameter Store
+  # consumers' prd and dev here, GitHub's in github.tf and Railway's in
+  # railway.tf.
+  reference_sets = concat(
+    flatten([
+      for project, consumer in local.parameter_store_consumers : [
+        for config in keys(local.environments) : {
+          project = project
+          config  = config
+          refs = {
+            for name, source in consumer[config] :
+            name => { ref = "$${${local.vault}.${config}.${source}}", visibility = null }
+          }
+        }
+      ]
+    ]),
+    local.github_references,
+    local.railway_references,
+  )
+}
+
 output "references" {
-  description = "Per project and config: each secret name → the reference it holds. scripts/doppler_references.py writes these."
+  description = "Per project and config: each secret name → the reference it holds, and its visibility when set. scripts/doppler_references.py writes these."
   value = {
-    for project, consumer in local.parameter_store_consumers : project => {
-      for config in keys(local.environments) : config => {
-        for name, source in consumer[config] : name => "$${${local.vault}.${config}.${source}}"
-      }
+    for project in distinct([for set in local.reference_sets : set.project]) : project => {
+      for set in local.reference_sets : set.config => set.refs if set.project == project
     }
   }
 }

@@ -9,7 +9,8 @@ doppler/ declares the projects and their syncs; this writes what is in
 them. Terraform cannot: a doppler_secret resource keeps the value its
 reference resolves to in state, and nothing secret goes in state.
 
-Reads {project: {config: {NAME: "${vault.config.SOURCE}"}}} on stdin and,
+Reads {project: {config: {NAME: "${vault.config.SOURCE}"}}} on stdin (or
+{NAME: {"ref": ..., "visibility": "masked" | "unmasked" | null}}) and,
 for each config, sets every NAME whose reference differs from what the
 config holds. Doppler refuses a reference to a secret that is itself a
 reference, so where the source is one, NAME references its target instead.
@@ -101,21 +102,47 @@ class Doppler:
             self._references[key] = found
         return self._references[key]
 
-    def raw(self, project: str, config: str) -> dict[str, str]:
-        """The config's raw values: the reference strings, not what they resolve to."""
+    def held(self, project: str, config: str) -> dict[str, tuple[str, str | None]]:
+        """The config's raw values and their visibility: the reference strings, not what they resolve to."""
         body = self._request("GET", "/configs/config/secrets", {"project": project, "config": config})
-        return {name: secret.get("raw") or "" for name, secret in body["secrets"].items() if name not in BUILTIN}
+        return {
+            name: (secret.get("raw") or "", secret.get("rawVisibility"))
+            for name, secret in body["secrets"].items()
+            if name not in BUILTIN
+        }
+
+    def raw(self, project: str, config: str) -> dict[str, str]:
+        return {name: raw for name, (raw, _) in self.held(project, config).items()}
 
     def write(self, project: str, config: str, secrets: dict[str, str | None]) -> None:
         # The response echoes every secret, resolved; it is dropped unread.
         self._request("POST", "/configs/config/secrets", body={"project": project, "config": config, "secrets": secrets})
 
+    def set_visibility(self, project: str, config: str, secrets: dict[str, tuple[str, str]]) -> None:
+        """Set each secret's visibility (with its reference, which the request needs)."""
+        requests = [
+            {"originalName": name, "name": name, "value": reference, "visibility": visibility}
+            for name, (reference, visibility) in secrets.items()
+        ]
+        self._request("POST", "/configs/config/secrets", body={"project": project, "config": config, "change_requests": requests})
 
-def plan(doppler: Doppler, project: str, config: str, wanted: dict[str, str], prune: bool) -> tuple[dict[str, str | None], list[str]]:
-    """What to write to one config, and the references skipped for want of a source."""
+
+def plan(
+    doppler: Doppler, project: str, config: str, wanted: dict[str, str | dict], prune: bool
+) -> tuple[dict[str, str | None], dict[str, tuple[str, str]], list[str]]:
+    """What to write to one config: values, visibilities, and the references skipped for want of a source.
+
+    Each wanted value is a reference, or {"ref": reference, "visibility":
+    "masked" | "unmasked" | None}; an unmasked one syncs to GitHub as an
+    Actions variable.
+    """
     skipped = []
     present = {}
-    for name, reference in wanted.items():
+    visibility = {}
+    for name, spec in wanted.items():
+        reference = spec["ref"] if isinstance(spec, dict) else spec
+        if isinstance(spec, dict) and spec.get("visibility"):
+            visibility[name] = spec["visibility"]
         match = REFERENCE.match(reference)
         if not match:
             raise SystemExit(f"{project}/{config} {name}: {reference!r} is not a ${{project.config.NAME}} reference")
@@ -127,11 +154,16 @@ def plan(doppler: Doppler, project: str, config: str, wanted: dict[str, str], pr
         # to its prd config.
         present[name] = doppler.references_in(source_project, source_config).get(source_name, reference)
 
-    held = doppler.raw(project, config)
-    changes: dict[str, str | None] = {name: ref for name, ref in present.items() if held.get(name) != ref}
+    held = doppler.held(project, config)
+    changes: dict[str, str | None] = {name: ref for name, ref in present.items() if held.get(name, ("", None))[0] != ref}
     if prune:
         changes.update({name: None for name in held if name not in present})
-    return changes, skipped
+    visibilities = {
+        name: (present[name], wanted_visibility)
+        for name, wanted_visibility in visibility.items()
+        if name in present and held.get(name, ("", None))[1] != wanted_visibility
+    }
+    return changes, visibilities, skipped
 
 
 def main() -> int:
@@ -150,20 +182,30 @@ def main() -> int:
     failed = 0
     for project in sorted(references):
         for config in sorted(references[project]):
-            changes, skipped = plan(doppler, project, config, references[project][config], args.prune)
+            try:
+                changes, visibilities, skipped = plan(doppler, project, config, references[project][config], args.prune)
+            except SystemExit as error:
+                print(f"  FAILED {project}/{config}: {error}")
+                failed += 1
+                continue
             for line in skipped:
                 print(f"  skip   {project}/{config} {line} (not in the vault)")
             for name in sorted(changes):
                 verb = "delete" if changes[name] is None else "set"
                 print(f"  {verb:<6} {project}/{config} {name}" + ("" if changes[name] is None else f" = {changes[name]}"))
-            if changes and args.apply:
+            for name in sorted(visibilities):
+                print(f"  {visibilities[name][1]:<6} {project}/{config} {name}")
+            if args.apply and (changes or visibilities):
                 try:
-                    doppler.write(project, config, changes)
+                    if changes:
+                        doppler.write(project, config, changes)
+                    if visibilities:
+                        doppler.set_visibility(project, config, visibilities)
                 except SystemExit as error:
                     print(f"  FAILED {project}/{config}: {error}")
                     failed += 1
                     continue
-            pending += len(changes)
+            pending += len(changes) + len(visibilities)
 
     if failed:
         print(f"{failed} config(s) failed; the others were written. Fix and run again.")
