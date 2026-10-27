@@ -310,6 +310,10 @@ module "watcher" {
   # asker a no-op.
   enabled = true
 
+  # Reads its own Doppler project, watcher-cog (README.md, "Doppler
+  # layout"); the names below say which vault value each one references.
+  own_doppler_config = true
+
   ssm_parameters = {
     CSV_SOURCE_FOLDER_ID               = "CSV_SOURCE_FOLDER_ID"
     GOOGLE_CREDENTIALS_JSON            = "GOOGLE_CREDENTIALS_JSON"
