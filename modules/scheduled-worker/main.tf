@@ -16,21 +16,16 @@ data "aws_region" "current" {}
 locals {
   tags = { Component = "${var.name}-worker" }
 
-  # The worker's own Doppler project is named for its repository. With
-  # own_doppler_config, that project's prd config holds each parameter
-  # under the name the code reads, synced to a prefix of its own; without
-  # it, the names are the shared prd config's, under ssm_prefix.
+  # The worker's own Doppler project is named for its repository. Its prd
+  # config holds each parameter under the name the code reads, as a
+  # reference to the vault value the module block names, and syncs to a
+  # prefix of its own (README.md, "Doppler layout").
   doppler_project = element(split("/", var.github_repo), 1)
 
-  ssm_prefix = var.own_doppler_config ? "/mini-app-polis/${local.doppler_project}/prd/" : var.ssm_prefix
+  ssm_prefix = "/mini-app-polis/${local.doppler_project}/prd/"
 
-  ssm_parameters = var.own_doppler_config ? {
-    for name in keys(var.ssm_parameters) : name => name
-  } : var.ssm_parameters
-
-  ssm_optional_parameters = var.own_doppler_config ? {
-    for name in keys(var.ssm_optional_parameters) : name => name
-  } : var.ssm_optional_parameters
+  ssm_parameters          = { for name in keys(var.ssm_parameters) : name => name }
+  ssm_optional_parameters = { for name in keys(var.ssm_optional_parameters) : name => name }
 
   ssm_parameter_arns = [
     for p in distinct(values(merge(local.ssm_parameters, local.ssm_optional_parameters))) :

@@ -183,13 +183,11 @@ optional setting nobody has set, and the worker leaves it unset. Apply this
 root after the root's apply when a worker's parameter list changes, since
 it reads the root's `doppler_consumers` output.
 
-A worker moves to its own config in two steps. First this root and the
-script give it a project whose sync has run. Then `own_doppler_config =
-true` on its module block points the function at its own prefix, under the
-names its code reads, and narrows its grant to that prefix.
-
-Check the first step before the second: the root's plan role may not read
-parameters, so nothing at plan time can. Every name in the module's
+A worker reads its own prefix, under the names its code reads, and its
+grant covers that prefix alone. A new worker, or a new name in a worker's
+`ssm_parameters`, needs this root and the script applied, and the sync run,
+before the root's apply ships it: the root's plan role may not read
+parameters, so nothing at plan time checks. Every name in the module's
 `ssm_parameters` must be listed here (Doppler's own `DOPPLER_*` names sync
 beside them and are ignored):
 
