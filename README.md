@@ -108,7 +108,8 @@ Doppler service tokens, one for the `prd` config and one for `dev`. They
 live outside `/mini-app-polis/` (`terraform output
 rotator_doppler_token_parameters`), so Doppler's sync role and the other
 workers' grants never reach them; the `rotator-worker` role may read those
-two parameters and nothing else outside its own list.
+two parameters, its Railway and Cloudflare tokens (below), and nothing else
+outside its own list.
 
 They are put by hand, not declared in Terraform: Terraform reads a
 parameter it manages back on every plan, decrypted, and `infra-plan` may
@@ -133,6 +134,18 @@ redeploys; they are not in its environment. Mint a token in Railway, then:
 ```bash
 pbpaste | tr -d '\r\n' | doppler secrets set ROTATOR_RAILWAY_TOKEN_PRD -p rotator-cog -c prd > /dev/null
 pbpaste | tr -d '\r\n' | doppler secrets set ROTATOR_RAILWAY_TOKEN_DEV -p rotator-cog -c prd > /dev/null
+```
+
+It rotates `TURNSTILE_SECRET_KEY` itself, through Cloudflare's rotate-secret
+API, with `ROTATOR_CLOUDFLARE_TURNSTILE_TOKEN`: a Cloudflare token whose only
+permission is Account > Turnstile Sites: Edit, held the same way in
+`rotator-cog` / `prd` and read by path. Its environment names the widget
+(`CLOUDFLARE_ACCOUNT_ID`, and `TURNSTILE_SITEKEY` from
+`cloudflare_turnstile_widget.kaiano_api`). Mint the token in Cloudflare
+(My Profile > API Tokens > custom token), then:
+
+```bash
+pbpaste | tr -d '\r\n' | doppler secrets set ROTATOR_CLOUDFLARE_TURNSTILE_TOKEN -p rotator-cog -c prd > /dev/null
 ```
 
 ## Doppler layout

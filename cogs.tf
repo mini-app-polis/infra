@@ -440,6 +440,12 @@ module "rotator" {
     DOPPLER_TOKEN_DEV_PARAMETER = local.rotator_doppler_token_parameters.dev
     RAILWAY_TOKEN_PRD_PARAMETER = local.rotator_railway_token_parameters.prd
     RAILWAY_TOKEN_DEV_PARAMETER = local.rotator_railway_token_parameters.dev
+
+    # TURNSTILE_SECRET_KEY's rotation: the widget it belongs to, and where
+    # the Cloudflare token that rotates it is. Neither identifier is secret.
+    CLOUDFLARE_TURNSTILE_TOKEN_PARAMETER = local.rotator_cloudflare_turnstile_token_parameter
+    CLOUDFLARE_ACCOUNT_ID                = var.cloudflare_account_id
+    TURNSTILE_SITEKEY                    = cloudflare_turnstile_widget.kaiano_api.sitekey
   }
 
   # Reads its own Doppler project, rotator-cog (README.md, "Doppler
@@ -483,16 +489,25 @@ locals {
     prd = "/mini-app-polis/rotator-cog/prd/ROTATOR_RAILWAY_TOKEN_PRD"
     dev = "/mini-app-polis/rotator-cog/prd/ROTATOR_RAILWAY_TOKEN_DEV"
   }
+
+  # The Cloudflare token it rotates TURNSTILE_SECRET_KEY with, whose only
+  # permission is Turnstile Sites: Edit. A value of the rotator's own, like
+  # the Railway tokens, read by path when it rotates.
+  rotator_cloudflare_turnstile_token_parameter = "/mini-app-polis/rotator-cog/prd/ROTATOR_CLOUDFLARE_TURNSTILE_TOKEN"
 }
 
-# Those four parameters, by name, and nothing else outside the module's own
+# Those parameters, by name, and nothing else outside the module's own
 # grant. No KMS grant: they are SecureStrings under the AWS-managed aws/ssm
 # key, as the synced ones are.
 data "aws_iam_policy_document" "rotator_doppler_token" {
   statement {
     actions = ["ssm:GetParameter", "ssm:GetParameters"]
     resources = [
-      for name in concat(values(local.rotator_doppler_token_parameters), values(local.rotator_railway_token_parameters)) :
+      for name in concat(
+        values(local.rotator_doppler_token_parameters),
+        values(local.rotator_railway_token_parameters),
+        [local.rotator_cloudflare_turnstile_token_parameter],
+      ) :
       "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter${name}"
     ]
   }
