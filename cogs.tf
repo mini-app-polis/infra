@@ -474,11 +474,14 @@ locals {
   # The Railway tokens it redeploys the services that read a rotated secret
   # at boot with: project tokens, and a project token reaches one
   # environment, so one per config as for Doppler (prd is the production
-  # environment, dev development). Put by hand like the Doppler tokens, for
-  # the same reason.
+  # environment, dev development). Values of the rotator's own in its
+  # Doppler project's prd config, not references into the vault, so they
+  # reach no other consumer; that config's sync puts them here. Not in the
+  # module's ssm_parameters: the worker reads them when it redeploys, and
+  # they never go in its environment.
   rotator_railway_token_parameters = {
-    prd = "/rotator/RAILWAY_TOKEN_PRD"
-    dev = "/rotator/RAILWAY_TOKEN_DEV"
+    prd = "/mini-app-polis/rotator-cog/prd/ROTATOR_RAILWAY_TOKEN_PRD"
+    dev = "/mini-app-polis/rotator-cog/prd/ROTATOR_RAILWAY_TOKEN_DEV"
   }
 }
 
