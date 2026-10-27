@@ -152,7 +152,7 @@ locals {
     for key, target in local.github_targets : key => {
       project = target.repo
       slug    = target.environment == null ? "ci" : "ci-${target.environment}"
-      name    = target.environment == null ? "GitHub Actions" : "GitHub Actions: ${target.environment}"
+      name    = target.environment == null ? "GitHub Actions" : "GitHub Actions ${target.environment}"
     }
   }
 
