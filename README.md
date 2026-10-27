@@ -150,10 +150,15 @@ references, such as the rotator's Railway tokens (above), or a setting
 only one environment of one service changes from its code default.
 `scripts/doppler_references.py --prune` never deletes one.
 
-So far the Lambda workers and this root have projects. Each one's `prd`
-syncs to `/mini-app-polis/<repository>/prd/`; a worker's `dev` holds the
-same references into the vault's `dev`, for local runs. This root's own
-project, `infra`, holds the alert address `account.tf` reads.
+The Lambda workers and this root have projects that sync to Parameter
+Store. Each one's `prd` syncs to `/mini-app-polis/<repository>/prd/`; a
+worker's `dev` holds the same references into the vault's `dev`. This
+root's own project, `infra`, holds the alert address `account.tf` reads.
+
+Local runs use the same projects: each repository's `doppler.yaml` pins
+its own project's `dev`, so `doppler run` sees what production sees, under
+the same names. A repository whose project exists only for GitHub Actions
+gets its `dev` in `doppler/local.tf`.
 
 GitHub Actions reads the same way (`doppler/github.tf`). A repository's
 secrets and variables are its project's `ci` environment, synced to the
