@@ -178,6 +178,15 @@ script give it a project whose sync has run. Then `own_doppler_config =
 true` on its module block points the function at its own prefix, under the
 names its code reads, and narrows its grant to that prefix.
 
+Check the first step before the second: the root's plan role may not read
+parameters, so nothing at plan time can. Every name in the module's
+`ssm_parameters` must be listed here (Doppler's own `DOPPLER_*` names sync
+beside them and are ignored):
+
+```bash
+aws ssm get-parameters-by-path --region us-east-1 --path /mini-app-polis/<repository>/prd --query 'Parameters[].Name' --output text | tr '\t' '\n'
+```
+
 ## Copied constants
 
 Some values here are copies of ones another repository owns. The `plan` job
