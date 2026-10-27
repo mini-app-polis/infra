@@ -147,6 +147,15 @@ syncs to `/mini-app-polis/<repository>/prd/`; a worker's `dev` holds the
 same references into the vault's `dev`, for local runs. This root's own
 project, `infra`, holds the alert address `account.tf` reads.
 
+GitHub Actions reads the same way (`doppler/github.tf`). A repository's
+secrets and variables are its project's `ci` environment, synced to the
+repository: masked values as Actions secrets, unmasked ones as Actions
+variables. A GitHub environment's are `ci-<name>` (infra's `production`).
+What the whole organisation reads is the `github-org` project, synced to
+organisation secrets and variables. Values this root produces (role ARNs,
+function names) are not secrets and are written by Terraform; everything
+else is a reference into the vault. Nothing in GitHub is set by hand.
+
 `doppler/` declares the projects and their syncs. It is a root of its own,
 with its own state, applied from the workstation with the owner's Doppler
 login. Nothing in GitHub holds a token that can do it: on Doppler's Team
