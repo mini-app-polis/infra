@@ -38,7 +38,7 @@ output "watcher" {
 }
 
 output "doppler_consumers" {
-  description = "Per worker's own Doppler project: each name its code reads → the shared prd config's name for the value. doppler/ lays out each project's configs and syncs from this."
+  description = "Per worker's own Doppler project: each name its code reads → the vault's name for the value. doppler/ lays out each project's configs and syncs from this."
   value = {
     for m in [
       module.evaluator,

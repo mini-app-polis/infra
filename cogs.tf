@@ -28,8 +28,6 @@ module "evaluator" {
 
   # Reads its own Doppler project, evaluator-cog (README.md, "Doppler
   # layout"); the names below say which vault value each one references.
-  own_doppler_config = true
-
   # GITHUB_TOKEN is the name the code reads; its value is the fleet's one
   # read-only GitHub token, GITHUB_DASHBOARD_TOKEN.
   ssm_parameters = {
@@ -78,8 +76,6 @@ module "deejay" {
 
   # Reads its own Doppler project, deejay-cog (README.md, "Doppler
   # layout"); the names below say which vault value each one references.
-  own_doppler_config = true
-
   ssm_parameters = {
     DEEJAY_COG_API_KEY      = "DEEJAY_COG_API_KEY"
     GOOGLE_CREDENTIALS_JSON = "GOOGLE_CREDENTIALS_JSON"
@@ -120,8 +116,6 @@ module "transcription" {
 
   # Reads its own Doppler project, transcription-cog (README.md, "Doppler
   # layout"); the names below say which vault value each one references.
-  own_doppler_config = true
-
   ssm_parameters = {
     ANTHROPIC_API_KEY                  = "ANTHROPIC_API_KEY"
     GOOGLE_CREDENTIALS_JSON            = "GOOGLE_CREDENTIALS_JSON"
@@ -184,8 +178,6 @@ module "wiki_curator" {
 
   # Reads its own Doppler project, wiki-curator-cog (README.md, "Doppler
   # layout"); the names below say which vault value each one references.
-  own_doppler_config = true
-
   ssm_parameters = {
     ANTHROPIC_API_KEY        = "ANTHROPIC_API_KEY"
     WIKI_CURATOR_COG_API_KEY = "WIKI_CURATOR_COG_API_KEY"
@@ -243,8 +235,6 @@ module "task_manager" {
 
   # Reads its own Doppler project, task-manager-cog (README.md, "Doppler
   # layout"); the names below say which vault value each one references.
-  own_doppler_config = true
-
   ssm_parameters = {
     ASANA_ACCESS_TOKEN       = "ASANA_ACCESS_TOKEN"
     ASANA_INBOX_PROJECT_ID   = "ASANA_INBOX_PROJECT_ID"
@@ -328,8 +318,6 @@ module "watcher" {
 
   # Reads its own Doppler project, watcher-cog (README.md, "Doppler
   # layout"); the names below say which vault value each one references.
-  own_doppler_config = true
-
   ssm_parameters = {
     CSV_SOURCE_FOLDER_ID               = "CSV_SOURCE_FOLDER_ID"
     GOOGLE_CREDENTIALS_JSON            = "GOOGLE_CREDENTIALS_JSON"
@@ -382,8 +370,6 @@ module "task_groomer" {
 
   # Reads its own Doppler project, task-groomer-cog (README.md, "Doppler
   # layout"); the names below say which vault value each one references.
-  own_doppler_config = true
-
   ssm_parameters = {
     ANTHROPIC_API_KEY        = "ANTHROPIC_API_KEY"
     TASK_GROOMER_COG_API_KEY = "TASK_GROOMER_COG_API_KEY"
@@ -458,8 +444,6 @@ module "rotator" {
 
   # Reads its own Doppler project, rotator-cog (README.md, "Doppler
   # layout"); the names below say which vault value each one references.
-  own_doppler_config = true
-
   ssm_parameters = {
     ROTATOR_COG_API_KEY = "ROTATOR_COG_API_KEY"
   }
@@ -490,11 +474,14 @@ locals {
   # The Railway tokens it redeploys the services that read a rotated secret
   # at boot with: project tokens, and a project token reaches one
   # environment, so one per config as for Doppler (prd is the production
-  # environment, dev development). Put by hand like the Doppler tokens, for
-  # the same reason.
+  # environment, dev development). Values of the rotator's own in its
+  # Doppler project's prd config, not references into the vault, so they
+  # reach no other consumer; that config's sync puts them here. Not in the
+  # module's ssm_parameters: the worker reads them when it redeploys, and
+  # they never go in its environment.
   rotator_railway_token_parameters = {
-    prd = "/rotator/RAILWAY_TOKEN_PRD"
-    dev = "/rotator/RAILWAY_TOKEN_DEV"
+    prd = "/mini-app-polis/rotator-cog/prd/ROTATOR_RAILWAY_TOKEN_PRD"
+    dev = "/mini-app-polis/rotator-cog/prd/ROTATOR_RAILWAY_TOKEN_DEV"
   }
 }
 

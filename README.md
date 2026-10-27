@@ -122,14 +122,17 @@ read -rs -p "dev token: " token && printf '%s' "$token" | aws ssm put-parameter 
 
 It also redeploys the Railway services that read a rotated secret at boot,
 with Railway project tokens of its own. A project token reaches one
-environment, so there are two: `/rotator/RAILWAY_TOKEN_PRD` for production
-and `/rotator/RAILWAY_TOKEN_DEV` for development (`terraform output
-rotator_railway_token_parameters`), readable by the same role and put the
-same way:
+environment, so there are two, `ROTATOR_RAILWAY_TOKEN_PRD` for production
+and `ROTATOR_RAILWAY_TOKEN_DEV` for development. They are values in the
+rotator-cog Doppler project's `prd` config, not references into the vault,
+so no other consumer reads them, and its sync puts them in
+`/mini-app-polis/rotator-cog/prd/` (`terraform output
+rotator_railway_token_parameters`). The worker reads them by path when it
+redeploys; they are not in its environment. Mint a token in Railway, then:
 
 ```bash
-read -rs -p "Railway production token: " token && printf '%s' "$token" | aws ssm put-parameter --name /rotator/RAILWAY_TOKEN_PRD --type SecureString --overwrite --value file:///dev/stdin; unset token
-read -rs -p "Railway development token: " token && printf '%s' "$token" | aws ssm put-parameter --name /rotator/RAILWAY_TOKEN_DEV --type SecureString --overwrite --value file:///dev/stdin; unset token
+pbpaste | tr -d '\r\n' | doppler secrets set ROTATOR_RAILWAY_TOKEN_PRD -p rotator-cog -c prd > /dev/null
+pbpaste | tr -d '\r\n' | doppler secrets set ROTATOR_RAILWAY_TOKEN_DEV -p rotator-cog -c prd > /dev/null
 ```
 
 ## Doppler layout
@@ -141,6 +144,10 @@ whose configs hold only what it reads. Each value there is a reference
 into the vault (`${mini-app-polis-ecosystem.prd.NAME}`), named as the
 consumer's code reads it, and the consumer's syncs carry only those. A
 change in the vault re-syncs every config that references it.
+
+A consumer's config may also hold values of its own that are not
+references: the rotator's Railway tokens (above) are the only ones.
+`scripts/doppler_references.py --prune` never deletes one.
 
 So far the Lambda workers and this root have projects. Each one's `prd`
 syncs to `/mini-app-polis/<repository>/prd/`; a worker's `dev` holds the
@@ -183,13 +190,11 @@ optional setting nobody has set, and the worker leaves it unset. Apply this
 root after the root's apply when a worker's parameter list changes, since
 it reads the root's `doppler_consumers` output.
 
-A worker moves to its own config in two steps. First this root and the
-script give it a project whose sync has run. Then `own_doppler_config =
-true` on its module block points the function at its own prefix, under the
-names its code reads, and narrows its grant to that prefix.
-
-Check the first step before the second: the root's plan role may not read
-parameters, so nothing at plan time can. Every name in the module's
+A worker reads its own prefix, under the names its code reads, and its
+grant covers that prefix alone. A new worker, or a new name in a worker's
+`ssm_parameters`, needs this root and the script applied, and the sync run,
+before the root's apply ships it: the root's plan role may not read
+parameters, so nothing at plan time checks. Every name in the module's
 `ssm_parameters` must be listed here (Doppler's own `DOPPLER_*` names sync
 beside them and are ignored):
 

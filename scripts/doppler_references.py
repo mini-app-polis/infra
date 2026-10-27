@@ -18,7 +18,8 @@ Without --apply it only prints what it would do. A reference
 to a name the vault does not hold is skipped and reported, never written:
 that is an optional setting nobody has set, and the worker treats it as
 unset. With --prune, names the config holds but the input does not are
-deleted.
+deleted, if they are references: a value a config holds of its own is
+never pruned.
 
 Never prints or keeps a secret. It reads raw values, never resolved ones:
 in a consumer's config they are the reference strings, and of the vault's
@@ -157,7 +158,10 @@ def plan(
     held = doppler.held(project, config)
     changes: dict[str, str | None] = {name: ref for name, ref in present.items() if held.get(name, ("", None))[0] != ref}
     if prune:
-        changes.update({name: None for name in held if name not in present})
+        # Only references: a value a config holds of its own is not ours.
+        changes.update(
+            {name: None for name in held if name not in present and ANY_REFERENCE.match(held[name][0])}
+        )
     visibilities = {
         name: (present[name], wanted_visibility)
         for name, wanted_visibility in visibility.items()

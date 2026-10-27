@@ -110,29 +110,14 @@ variable "environment" {
 
 # ── Secrets, by name ─────────────────────────────────────────────────────
 
-variable "ssm_prefix" {
-  description = "Where Doppler syncs the ecosystem's prd config."
-  type        = string
-  default     = "/mini-app-polis/prd/"
-}
-
-variable "own_doppler_config" {
-  description = <<-DESC
-    Read the parameters from the worker's own Doppler project (named for
-    its repository), whose prd config holds each one under the name the
-    code reads and syncs to /mini-app-polis/<repository>/prd/. Off, they are
-    the shared prd config's names under ssm_prefix. The project and its sync
-    are declared in doppler/ and must have synced before this is turned on.
-  DESC
-  type        = bool
-  default     = false
-}
-
 variable "ssm_parameters" {
   description = <<-DESC
-    Environment variable name → parameter name under ssm_prefix. The worker
-    loads these at cold start (mini_app_polis.ssm_secrets) and its role may
-    read these and nothing else. A missing one fails the cold start.
+    Environment variable name → the name of its value in the vault,
+    mini-app-polis-ecosystem / prd. The worker's own Doppler config holds a
+    reference to that value under the environment variable's name, synced to
+    /mini-app-polis/<repository>/prd/. The worker loads these at cold start
+    (mini_app_polis.ssm_secrets) and its role may read these and nothing
+    else. A missing one fails the cold start.
   DESC
   type        = map(string)
 }
