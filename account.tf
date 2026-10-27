@@ -8,13 +8,14 @@
 data "aws_caller_identity" "current" {}
 
 # Where the budget and every cog's dead-letter alarm go: the ecosystem's
-# contact address, CONTACT_TO_EMAIL in Doppler, read via Parameter Store
-# rather than committed — this repository is public, and a tfvars file on a
-# workstation is exactly what this repository exists to not need. Changing
-# that secret moves these alerts too, and each SNS subscription then needs
-# confirming again from the new inbox.
+# contact address, CONTACT_TO_EMAIL in Doppler (this root's own project,
+# synced to /mini-app-polis/infra/prd/; README.md, "Doppler layout"), read
+# via Parameter Store rather than committed — this repository is public,
+# and a tfvars file on a workstation is exactly what this repository exists
+# to not need. Changing that secret moves these alerts too, and each SNS
+# subscription then needs confirming again from the new inbox.
 data "aws_ssm_parameter" "alert_email" {
-  name = "/mini-app-polis/prd/CONTACT_TO_EMAIL"
+  name = "/mini-app-polis/infra/prd/CONTACT_TO_EMAIL"
 }
 
 locals {
