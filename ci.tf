@@ -83,13 +83,7 @@ data "aws_iam_policy_document" "infra_plan_limits" {
       "ssm:GetParametersByPath",
       "ssm:GetParameterHistory",
     ]
-    not_resources = [
-      data.aws_ssm_parameter.alert_email.arn,
-      # Where the address moves to, this root's own Doppler project
-      # (README.md, "Doppler layout"). Granted before account.tf reads it,
-      # since a plan runs under the grant the last apply made.
-      "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/mini-app-polis/infra/prd/CONTACT_TO_EMAIL",
-    ]
+    not_resources = [data.aws_ssm_parameter.alert_email.arn]
   }
 
   # ReadOnlyAccess also grants s3:GetObject on every bucket, which would let
