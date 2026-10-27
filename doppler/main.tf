@@ -58,7 +58,7 @@ locals {
 
 data "terraform_remote_state" "infra" {
   backend = "s3"
-  config  = {
+  config = {
     bucket = "mini-app-polis-tfstate-400200465748"
     key    = "infra.tfstate"
     region = "us-east-1"
