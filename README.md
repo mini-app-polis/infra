@@ -108,7 +108,8 @@ Doppler service tokens, one for the `prd` config and one for `dev`. They
 live outside `/mini-app-polis/` (`terraform output
 rotator_doppler_token_parameters`), so Doppler's sync role and the other
 workers' grants never reach them; the `rotator-worker` role may read those
-two parameters and nothing else outside its own list.
+two parameters, its Railway and Cloudflare tokens (below), and nothing else
+outside its own list.
 
 They are put by hand, not declared in Terraform: Terraform reads a
 parameter it manages back on every plan, decrypted, and `infra-plan` may
@@ -135,6 +136,18 @@ pbpaste | tr -d '\r\n' | doppler secrets set ROTATOR_RAILWAY_TOKEN_PRD -p rotato
 pbpaste | tr -d '\r\n' | doppler secrets set ROTATOR_RAILWAY_TOKEN_DEV -p rotator-cog -c prd > /dev/null
 ```
 
+It rotates `TURNSTILE_SECRET_KEY` itself, through Cloudflare's rotate-secret
+API, with `ROTATOR_CLOUDFLARE_TURNSTILE_TOKEN`: a Cloudflare token whose only
+permission is Account > Turnstile Sites: Edit, held the same way in
+`rotator-cog` / `prd` and read by path. Its environment names the widget
+(`CLOUDFLARE_ACCOUNT_ID`, and `TURNSTILE_SITEKEY` from
+`cloudflare_turnstile_widget.kaiano_api`). Mint the token in Cloudflare
+(My Profile > API Tokens > custom token), then:
+
+```bash
+pbpaste | tr -d '\r\n' | doppler secrets set ROTATOR_CLOUDFLARE_TURNSTILE_TOKEN -p rotator-cog -c prd > /dev/null
+```
+
 ## Doppler layout
 
 `mini-app-polis-ecosystem` (`prd` and `dev`) is the vault: every value is
@@ -146,20 +159,28 @@ consumer's code reads it, and the consumer's syncs carry only those. A
 change in the vault re-syncs every config that references it.
 
 A consumer's config may also hold values of its own that are not
-references: the rotator's Railway tokens (above) are the only ones.
+references, such as the rotator's Railway tokens (above), or a setting
+only one environment of one service changes from its code default.
 `scripts/doppler_references.py --prune` never deletes one.
 
-So far the Lambda workers and this root have projects. Each one's `prd`
-syncs to `/mini-app-polis/<repository>/prd/`; a worker's `dev` holds the
-same references into the vault's `dev`, for local runs. This root's own
-project, `infra`, holds the alert address `account.tf` reads.
+The Lambda workers and this root have projects that sync to Parameter
+Store. Each one's `prd` syncs to `/mini-app-polis/<repository>/prd/`; a
+worker's `dev` holds the same references into the vault's `dev`. This
+root's own project, `infra`, holds the alert address `account.tf` reads.
+
+Local runs use the same projects: each repository's `doppler.yaml` pins
+its own project's `dev`, so `doppler run` sees what production sees, under
+the same names. A repository whose project exists only for GitHub Actions
+gets its `dev` in `doppler/local.tf`.
 
 GitHub Actions reads the same way (`doppler/github.tf`). A repository's
 secrets and variables are its project's `ci` environment, synced to the
 repository: masked values as Actions secrets, unmasked ones as Actions
 variables. A GitHub environment's are `ci-<name>` (infra's `production`).
 What the whole organisation reads is the `github-org` project, synced to
-organisation secrets and variables. Values this root produces (role ARNs,
+organisation secrets and variables. Its Dependabot secrets, which runs started
+by Dependabot read instead, come from `agent-github`'s `dependabot` config,
+whose sync was made in the dashboard; its values are references too. Values this root produces (role ARNs,
 function names) are not secrets and are written by Terraform; everything
 else is a reference into the vault. Nothing in GitHub is set by hand.
 

@@ -178,6 +178,22 @@ locals {
     variables = { AWS_REGION = "prd.AWS_REGION" }
   }
 
+  # Workflow runs started by Dependabot see the organisation's Dependabot
+  # secrets, not its Actions secrets, so the promote and agent workflows'
+  # own credentials are there too. The sync was made in the dashboard, from
+  # agent-github's dependabot config (the provider has no Dependabot sync);
+  # its values are references like everyone else's, so a rotation reaches it.
+  github_dependabot = {
+    for name in [
+      "AGENT_ANTHROPIC_API_KEY",
+      "AGENT_APP_CLIENT_ID",
+      "AGENT_APP_PRIVATE_KEY",
+      "PROMOTE_APP_CLIENT_ID",
+      "PROMOTE_APP_PRIVATE_KEY",
+      "TASK_AGENT_API_KEY",
+    ] : name => local.github_organisation.secrets[name]
+  }
+
   # Repositories without a project of their own yet, and the organisation's.
   github_projects = setunion(
     setsubtract(
@@ -208,6 +224,11 @@ locals {
           { for name, source in local.github_organisation.secrets : name => { ref = "$${${local.vault}.${source}}", visibility = "masked" } },
           { for name, source in local.github_organisation.variables : name => { ref = "$${${local.vault}.${source}}", visibility = "unmasked" } },
         )
+      },
+      {
+        project = "agent-github"
+        config  = "dependabot"
+        refs    = { for name, source in local.github_dependabot : name => { ref = "$${${local.vault}.${source}}", visibility = "masked" } }
       },
     ],
   )

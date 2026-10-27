@@ -31,8 +31,18 @@ locals {
   workers = data.terraform_remote_state.infra.outputs.doppler_consumers
 
   # What a worker's dev config adds for local runs, where the function's
-  # own environment (ENVIRONMENT, KAIANO_API_BASE_URL) is not there.
+  # own environment (ENVIRONMENT, KAIANO_API_BASE_URL) is not there. Outside
+  # production the API client reads KAIANO_API_BASE_URL_DEV instead.
   worker_dev_extras = {
+    ENVIRONMENT             = "ENVIRONMENT"
+    KAIANO_API_BASE_URL     = "KAIANO_API_BASE_URL"
+    KAIANO_API_BASE_URL_DEV = "KAIANO_API_BASE_URL_DEV"
+  }
+
+  # What a worker's prd config adds for a local command against production
+  # (`doppler run --config prd`): the function's own environment again. The
+  # function never loads these from Parameter Store; it has them already.
+  worker_prd_extras = {
     ENVIRONMENT         = "ENVIRONMENT"
     KAIANO_API_BASE_URL = "KAIANO_API_BASE_URL"
   }
@@ -44,7 +54,7 @@ locals {
     {
       for project, names in local.workers : project => {
         description = "${project}'s Lambda worker"
-        prd         = names
+        prd         = merge(names, local.worker_prd_extras)
         dev         = merge(names, local.worker_dev_extras)
       }
     },
@@ -148,6 +158,7 @@ locals {
     ]),
     local.github_references,
     local.railway_references,
+    local.local_dev_references,
   )
 }
 

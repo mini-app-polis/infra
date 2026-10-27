@@ -101,7 +101,7 @@ output "rotator_doppler_token_parameters" {
 }
 
 output "rotator_railway_token_parameters" {
-  description = "Put each Railway project token here by hand, as a SecureString (see the README)."
+  description = "Where the rotator-cog Doppler config's sync puts each Railway project token (see the README)."
   value       = local.rotator_railway_token_parameters
 }
 
