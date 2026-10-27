@@ -142,9 +142,10 @@ into the vault (`${mini-app-polis-ecosystem.prd.NAME}`), named as the
 consumer's code reads it, and the consumer's syncs carry only those. A
 change in the vault re-syncs every config that references it.
 
-So far the Lambda workers have projects. Each worker's `prd` syncs to
-`/mini-app-polis/<repository>/prd/`, and `dev` holds the same references
-into the vault's `dev`, for local runs.
+So far the Lambda workers and this root have projects. Each one's `prd`
+syncs to `/mini-app-polis/<repository>/prd/`; a worker's `dev` holds the
+same references into the vault's `dev`, for local runs. This root's own
+project, `infra`, holds the alert address `account.tf` reads.
 
 `doppler/` declares the projects and their syncs. It is a root of its own,
 with its own state, applied from the workstation with the owner's Doppler
