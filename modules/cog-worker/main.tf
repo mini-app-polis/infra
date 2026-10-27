@@ -16,9 +16,25 @@ locals {
   # same names (api-kaianolevine-com job_queue.queue_name).
   queue_suffix = var.fifo ? ".fifo" : ""
 
+  # The worker's own Doppler project is named for its repository. With
+  # own_doppler_config, that project's prd config holds each parameter
+  # under the name the code reads, synced to a prefix of its own; without
+  # it, the names are the shared prd config's, under ssm_prefix.
+  doppler_project = element(split("/", var.github_repo), 1)
+
+  ssm_prefix = var.own_doppler_config ? "/mini-app-polis/${local.doppler_project}/prd/" : var.ssm_prefix
+
+  ssm_parameters = var.own_doppler_config ? {
+    for name in keys(var.ssm_parameters) : name => name
+  } : var.ssm_parameters
+
+  ssm_optional_parameters = var.own_doppler_config ? {
+    for name in keys(var.ssm_optional_parameters) : name => name
+  } : var.ssm_optional_parameters
+
   ssm_parameter_arns = [
-    for p in distinct(values(merge(var.ssm_parameters, var.ssm_optional_parameters))) :
-    "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${var.ssm_prefix}${p}"
+    for p in distinct(values(merge(local.ssm_parameters, local.ssm_optional_parameters))) :
+    "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_prefix}${p}"
   ]
 }
 
@@ -224,9 +240,9 @@ resource "aws_lambda_function" "worker" {
       },
       var.environment,
       {
-        SSM_PREFIX              = var.ssm_prefix
-        SSM_PARAMETERS          = jsonencode(var.ssm_parameters)
-        SSM_OPTIONAL_PARAMETERS = jsonencode(var.ssm_optional_parameters)
+        SSM_PREFIX              = local.ssm_prefix
+        SSM_PARAMETERS          = jsonencode(local.ssm_parameters)
+        SSM_OPTIONAL_PARAMETERS = jsonencode(local.ssm_optional_parameters)
       },
     )
   }

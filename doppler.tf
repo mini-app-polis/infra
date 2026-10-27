@@ -1,9 +1,11 @@
 # The role Doppler assumes to sync the Lambda workers' secrets into SSM
 # Parameter Store.
 #
-# Doppler is the one place secrets are edited. One config,
-# mini-app-polis-ecosystem / prd, syncs to Parameter Store under a single
-# prefix — /mini-app-polis/prd/ — and each worker loads the parameters its
+# Doppler is the one place secrets are edited. A worker with
+# own_doppler_config reads its own project's prd config, synced to
+# /mini-app-polis/<repository>/prd/ (README.md, "Doppler layout"). Until
+# then the shared config, mini-app-polis-ecosystem / prd, syncs to the
+# prefix /mini-app-polis/prd/ itself, and each worker loads the parameters its
 # module block names (ssm_parameters / ssm_optional_parameters in cogs.tf),
 # not the whole prefix, at cold start and again on each invocation. Nothing
 # secret passes through Terraform, so nothing secret is in state or in a plan

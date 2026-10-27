@@ -17,3 +17,13 @@ output "schedule_state" {
   description = "ENABLED or DISABLED — whether the cutover has happened."
   value       = aws_cloudwatch_event_rule.schedule.state
 }
+
+output "doppler_project" {
+  description = "The worker's own Doppler project, named for its repository."
+  value       = local.doppler_project
+}
+
+output "doppler_references" {
+  description = "Each name the code reads → the shared prd config's name for its value: what the worker's own Doppler config references."
+  value       = merge(var.ssm_parameters, var.ssm_optional_parameters)
+}

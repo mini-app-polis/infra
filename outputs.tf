@@ -37,6 +37,23 @@ output "watcher" {
   }
 }
 
+output "doppler_consumers" {
+  description = "Per worker's own Doppler project: each name its code reads → the shared prd config's name for the value. doppler/ lays out each project's configs and syncs from this."
+  value = {
+    for m in [
+      module.evaluator,
+      module.deejay,
+      module.transcription,
+      module.wiki_curator,
+      module.task_manager,
+      module.task_groomer,
+      module.rotator,
+      module.watcher,
+    ] :
+    m.doppler_project => m.doppler_references
+  }
+}
+
 locals {
   # api-kaianolevine-com's dispatch claim window, behind its run endpoints. The
   # watcher asks for every file on every tick, and the API dispatches a
