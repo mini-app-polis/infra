@@ -23,6 +23,11 @@ locals {
   # the vault name behind each name its code reads.
   workers = data.terraform_remote_state.infra.outputs.doppler_consumers
 
+  environments = {
+    dev = "Development"
+    prd = "Production"
+  }
+
   # What a worker's dev config adds for local runs, where the function's
   # own environment (ENVIRONMENT, KAIANO_API_BASE_URL) is not there.
   worker_dev_extras = {
@@ -49,6 +54,21 @@ resource "doppler_project" "worker" {
   description = "${each.key}'s Lambda worker: references into ${local.vault}, under the names its code reads. Layout in mini-app-polis/infra doppler/."
 }
 
+# A project made through the API has no environments, so no configs. Each
+# environment's root config is named for its slug: prd syncs to AWS, dev is
+# for local runs.
+resource "doppler_environment" "worker" {
+  for_each = {
+    for pair in setproduct(keys(doppler_project.worker), keys(local.environments)) :
+    "${pair[0]}/${pair[1]}" => { project = pair[0], slug = pair[1] }
+  }
+
+  project          = doppler_project.worker[each.value.project].name
+  slug             = each.value.slug
+  name             = local.environments[each.value.slug]
+  personal_configs = false
+}
+
 # prd to the worker's own prefix, one parameter per secret, which the
 # root's own_doppler_config points the function at and grants it alone.
 # Removing a worker removes its parameters with it.
@@ -57,7 +77,7 @@ resource "doppler_secrets_sync_aws_parameter_store" "worker" {
 
   integration = local.parameter_store_connection
   project     = each.value.name
-  config      = "prd"
+  config      = doppler_environment.worker["${each.key}/prd"].slug
 
   region        = "us-east-1"
   path          = "/mini-app-polis/${each.value.name}/prd/"
