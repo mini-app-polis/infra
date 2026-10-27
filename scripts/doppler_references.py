@@ -38,6 +38,9 @@ import urllib.request
 
 API = "https://api.doppler.com/v3"
 REFERENCE = re.compile(r"^\$\{([^.}]+)\.([^.}]+)\.([^.}]+)\}$")
+# Doppler also accepts the short forms ${NAME} (same config) and
+# ${config.NAME} (same project), which the vault itself uses.
+ANY_REFERENCE = re.compile(r"^\$\{([^}]+)\}$")
 # Doppler adds these to every config; they are not ours to set or prune.
 BUILTIN = {"DOPPLER_PROJECT", "DOPPLER_CONFIG", "DOPPLER_ENVIRONMENT"}
 
@@ -86,9 +89,16 @@ class Doppler:
         """
         key = (project, config)
         if key not in self._references:
-            self._references[key] = {
-                name: raw for name, raw in self.raw(project, config).items() if REFERENCE.match(raw)
-            }
+            found = {}
+            for name, raw in self.raw(project, config).items():
+                match = ANY_REFERENCE.match(raw)
+                if not match:
+                    continue
+                parts = match.group(1).split(".")
+                if len(parts) > 3:
+                    continue
+                found[name] = "${" + ".".join([project, config][: 3 - len(parts)] + parts) + "}"
+            self._references[key] = found
         return self._references[key]
 
     def raw(self, project: str, config: str) -> dict[str, str]:
@@ -137,6 +147,7 @@ def main() -> int:
     doppler = Doppler(token)
 
     pending = 0
+    failed = 0
     for project in sorted(references):
         for config in sorted(references[project]):
             changes, skipped = plan(doppler, project, config, references[project][config], args.prune)
@@ -146,9 +157,17 @@ def main() -> int:
                 verb = "delete" if changes[name] is None else "set"
                 print(f"  {verb:<6} {project}/{config} {name}" + ("" if changes[name] is None else f" = {changes[name]}"))
             if changes and args.apply:
-                doppler.write(project, config, changes)
+                try:
+                    doppler.write(project, config, changes)
+                except SystemExit as error:
+                    print(f"  FAILED {project}/{config}: {error}")
+                    failed += 1
+                    continue
             pending += len(changes)
 
+    if failed:
+        print(f"{failed} config(s) failed; the others were written. Fix and run again.")
+        return 1
     if not pending:
         print("No changes.")
     elif args.apply:
