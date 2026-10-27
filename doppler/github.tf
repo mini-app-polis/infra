@@ -11,6 +11,14 @@
 # synced to organisation secrets and variables visible to every repository:
 # the organisation's repositories are public, so "private" would reach none.
 #
+# A reference takes its visibility from the secret it points at, so a
+# variable's value must be unmasked in the vault itself; one that is masked
+# there syncs as a secret, whatever its visibility here.
+#
+# Doppler also syncs its own DOPPLER_CONFIG, DOPPLER_ENVIRONMENT and
+# DOPPLER_PROJECT as variables wherever variables are synced. Nothing reads
+# them.
+#
 # Each source names a vault config and secret, "prd.NAME" or "dev.NAME".
 # A value that comes from this repository's own resources (a role ARN, a
 # function name) is not a secret and has no place in the vault: it is a

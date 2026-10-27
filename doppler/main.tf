@@ -126,7 +126,8 @@ resource "doppler_secrets_sync_aws_parameter_store" "consumer" {
 
 locals {
   # Every config's references, one entry per config: the Parameter Store
-  # consumers' prd and dev here, and GitHub's in github.tf.
+  # consumers' prd and dev here, GitHub's in github.tf and Railway's in
+  # railway.tf.
   reference_sets = concat(
     flatten([
       for project, consumer in local.parameter_store_consumers : [
@@ -141,6 +142,7 @@ locals {
       ]
     ]),
     local.github_references,
+    local.railway_references,
   )
 }
 
