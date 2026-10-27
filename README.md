@@ -34,6 +34,11 @@ one Terraform root with one state:
 - `outputs.tf` — besides each cog's repository variables, a plan-time check
   that api-kaianolevine-com's six-hour dispatch claim window outlasts every
   cog's longest possible job
+- `doppler/` — Doppler's layout: a project per consumer and its syncs, a
+  separate root applied from the workstation (see
+  [Doppler layout](#doppler-layout))
+- `scripts/doppler_references.py` — writes the references in those
+  projects' configs
 - `scripts/check_*.py` — CI checks that the values this configuration
   copies from other repositories still match their owners' main (see
   [Copied constants](#copied-constants))
@@ -126,6 +131,52 @@ same way:
 read -rs -p "Railway production token: " token && printf '%s' "$token" | aws ssm put-parameter --name /rotator/RAILWAY_TOKEN_PRD --type SecureString --overwrite --value file:///dev/stdin; unset token
 read -rs -p "Railway development token: " token && printf '%s' "$token" | aws ssm put-parameter --name /rotator/RAILWAY_TOKEN_DEV --type SecureString --overwrite --value file:///dev/stdin; unset token
 ```
+
+## Doppler layout
+
+`mini-app-polis-ecosystem` (`prd` and `dev`) is the vault: every value is
+edited there, once, and rotator-cog and `rotate.py` write only there. Each
+consumer gets a Doppler project of its own, named for its repository,
+whose configs hold only what it reads. Each value there is a reference
+into the vault (`${mini-app-polis-ecosystem.prd.NAME}`), named as the
+consumer's code reads it, and the consumer's syncs carry only those. A
+change in the vault re-syncs every config that references it.
+
+So far the Lambda workers have projects. Each worker's `prd` syncs to
+`/mini-app-polis/<repository>/prd/`, and `dev` holds the same references
+into the vault's `dev`, for local runs.
+
+`doppler/` declares the projects and their syncs. It is a root of its own,
+with its own state, applied from the workstation with the owner's Doppler
+login. Nothing in GitHub holds a token that can do it: on Doppler's Team
+plan any role that can see a project can read its secrets, so a token that
+plans this layout reads every secret in it. Terraform does not write the
+references themselves, since a `doppler_secret` resource keeps the value
+its reference resolves to in state. `scripts/doppler_references.py` writes
+them from `doppler/`'s `references` output.
+
+```bash
+export AWS_PROFILE=miniapppolis
+export DOPPLER_TOKEN="$(doppler configure get token --plain)"
+
+terraform -chdir=doppler init
+terraform -chdir=doppler plan -out tfplan
+terraform -chdir=doppler apply tfplan
+
+terraform -chdir=doppler output -json references | python3 scripts/doppler_references.py
+terraform -chdir=doppler output -json references | python3 scripts/doppler_references.py --apply
+```
+
+The script prints what it would write and writes it only with `--apply`.
+It skips a reference to a name the vault does not hold, and reports it. That is an
+optional setting nobody has set, and the worker leaves it unset. Apply this
+root after the root's apply when a worker's parameter list changes, since
+it reads the root's `doppler_consumers` output.
+
+A worker moves to its own config in two steps. First this root and the
+script give it a project whose sync has run. Then `own_doppler_config =
+true` on its module block points the function at its own prefix, under the
+names its code reads, and narrows its grant to that prefix.
 
 ## Copied constants
 
