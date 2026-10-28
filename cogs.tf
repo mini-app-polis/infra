@@ -223,12 +223,13 @@ module "task_manager" {
   reserved_concurrency = 1
   max_receive_count    = 3
 
-  # The hourly grooming sweep: every task waiting to be worked, checked
-  # against the definition of ready. On the queue, so it never runs beside
-  # a job creating a task.
+  # The grooming sweep, every half hour: every task waiting to be worked,
+  # checked against the definition of ready. On the queue, so it never runs
+  # beside a job creating a task. At :15 and :45, so GROOM_TIMES and
+  # AGENT_TIMES can name either half of an hour.
   schedules = {
     sweep = {
-      expression = "rate(1 hour)"
+      expression = "cron(15,45 * * * ? *)"
       body       = jsonencode({ type = "task.sweep", version = 1 })
     }
   }
@@ -246,6 +247,8 @@ module "task_manager" {
     GROOM_AUTO_READY       = "GROOM_AUTO_READY"
     GROOM_DISPATCH         = "GROOM_DISPATCH"
     GROOM_DISPATCH_LIMIT   = "GROOM_DISPATCH_LIMIT"
+    GROOM_TIMES            = "GROOM_TIMES"
+    SWEEP_TIMEZONE         = "SWEEP_TIMEZONE"
     GROOM_SECTIONS         = "GROOM_SECTIONS"
     READY_SECTION          = "READY_SECTION"
     REFINING_SECTION       = "REFINING_SECTION"
@@ -267,6 +270,7 @@ module "task_manager" {
     AGENT_MODEL               = "AGENT_MODEL"
     AGENT_MONTHLY_CAP_USD     = "AGENT_MONTHLY_CAP_USD"
     AGENT_RUN_TIMEOUT_MINUTES = "AGENT_RUN_TIMEOUT_MINUTES"
+    AGENT_TIMES               = "AGENT_TIMES"
     AGENT_TASK_CAP_USD        = "AGENT_TASK_CAP_USD"
     IN_PROGRESS_SECTION       = "IN_PROGRESS_SECTION"
     REVIEW_SECTION            = "REVIEW_SECTION"
