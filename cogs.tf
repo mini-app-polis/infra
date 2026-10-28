@@ -225,10 +225,11 @@ module "task_manager" {
 
   # The hourly grooming sweep: every task waiting to be worked, checked
   # against the definition of ready. On the queue, so it never runs beside
-  # a job creating a task.
+  # a job creating a task. At a quarter past, so the hours in GROOM_HOURS
+  # send grooming at :15.
   schedules = {
     sweep = {
-      expression = "rate(1 hour)"
+      expression = "cron(15 * * * ? *)"
       body       = jsonencode({ type = "task.sweep", version = 1 })
     }
   }
@@ -246,6 +247,8 @@ module "task_manager" {
     GROOM_AUTO_READY       = "GROOM_AUTO_READY"
     GROOM_DISPATCH         = "GROOM_DISPATCH"
     GROOM_DISPATCH_LIMIT   = "GROOM_DISPATCH_LIMIT"
+    GROOM_HOURS            = "GROOM_HOURS"
+    GROOM_TIMEZONE         = "GROOM_TIMEZONE"
     GROOM_SECTIONS         = "GROOM_SECTIONS"
     READY_SECTION          = "READY_SECTION"
     REFINING_SECTION       = "REFINING_SECTION"
