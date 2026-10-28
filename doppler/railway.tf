@@ -66,6 +66,7 @@ locals {
       "OPENAI_API_KEY",
       "RESUME_FILE_ID",
       "SENTRY_DSN_APIS",
+      "SIGNAL_CI_BRANCHES",
       "SPOTIPY_CLIENT_ID",
       "SPOTIPY_CLIENT_SECRET",
       "TURNSTILE_SECRET_KEY",
