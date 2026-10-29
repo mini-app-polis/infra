@@ -16,7 +16,10 @@ config holds. Doppler refuses a reference to a secret that is itself a
 reference, so where the source is one, NAME references its target instead.
 Without --apply it only prints what it would do. With --prune, names the
 config holds but the input does not are deleted, if they are references: a
-value a config holds of its own is never pruned.
+value a config holds of its own is never pruned. A branch config
+(``<root>_<name>``, such as db-ops' prd_backup) is read with what it shares
+with its root, so a name the input lists for the root is never pruned from
+the branch.
 
 A reference to a name the vault does not hold is a declared setting missing
 from the vault. Every declared optional setting is meant to be in the vault,
@@ -179,6 +182,7 @@ def plan(
     wanted: dict[str, str | dict],
     prune: bool,
     create_missing: bool = False,
+    inherited: frozenset[str] = frozenset(),
 ) -> tuple[dict[str, str | None], dict[str, tuple[str, str]], list[str], list[Missing]]:
     """What to write to one config: values, visibilities, the references
     skipped for want of a source, and the vault names to create.
@@ -188,7 +192,8 @@ def plan(
     Actions variable. Without ``create_missing`` a reference whose source
     name the vault does not hold is skipped; with it, the reference is
     planned as written and its source name is returned to be created empty
-    first.
+    first. ``inherited`` names what the input lists for the config's root,
+    which a branch config shares: never pruned.
     """
     skipped = []
     missing: list[Missing] = []
@@ -219,7 +224,11 @@ def plan(
     if prune:
         # Only references: a value a config holds of its own is not ours.
         changes.update(
-            {name: None for name in held if name not in present and ANY_REFERENCE.match(held[name][0])}
+            {
+                name: None
+                for name in held
+                if name not in present and name not in inherited and ANY_REFERENCE.match(held[name][0])
+            }
         )
     visibilities = {
         name: (present[name], wanted_visibility)
@@ -227,6 +236,18 @@ def plan(
         if name in present and held.get(name, ("", None))[1] != wanted_visibility
     }
     return changes, visibilities, skipped, missing
+
+
+def root_names(configs: dict[str, dict], config: str) -> frozenset[str]:
+    """What the input lists for ``config``'s root, when it is a branch config.
+
+    Doppler names a branch config ``<root>_<name>``; it shares its root's
+    names, so those are not stale in it.
+    """
+    root = config.split("_", 1)[0]
+    if root == config or root not in configs:
+        return frozenset()
+    return frozenset(configs[root])
 
 
 def main() -> int:
@@ -254,7 +275,13 @@ def main() -> int:
         for config in sorted(references[project]):
             try:
                 changes, visibilities, skipped, missing = plan(
-                    doppler, project, config, references[project][config], args.prune, args.create_missing
+                    doppler,
+                    project,
+                    config,
+                    references[project][config],
+                    args.prune,
+                    args.create_missing,
+                    root_names(references[project], config),
                 )
             except SystemExit as error:
                 print(f"  FAILED {project}/{config}: {error}")
