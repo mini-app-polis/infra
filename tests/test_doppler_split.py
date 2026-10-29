@@ -71,6 +71,15 @@ class FakeStore:
             split.SETTINGS: {"prd": {}, "dev": {}},
         }
         self.writes: list[tuple[str, str, dict[str, str]]] = []
+        # Visibility per name; Doppler masks a new value unless told otherwise.
+        self.shown: dict[str, dict[str, dict[str, str]]] = {
+            project: {c: {n: "masked" for n in held} for c, held in configs.items()}
+            for project, configs in self.raw.items()
+        }
+        for config in ("prd", "dev"):
+            for name in ("PUBLIC_SITE_KEY", "SIGNAL_ORGS"):
+                if name in self.shown[split.VAULT][config]:
+                    self.shown[split.VAULT][config][name] = "unmasked"
 
     def _resolve(self, project: str, config: str, raw: str, depth: int = 0) -> str | None:
         parts = split._reference(raw)
@@ -102,6 +111,19 @@ class FakeStore:
                 held.update(before)
                 raise RuntimeError(f"{name} cannot resolve its reference")
         self.writes.append((project, config, dict(values)))
+        shown = self.shown.setdefault(project, {}).setdefault(config, {})
+        for name in values:
+            shown.setdefault(name, "masked")
+
+    def visibility(self, project: str, config: str) -> dict[str, str | None]:
+        return dict(self.shown.get(project, {}).get(config, {}))
+
+    def set_visibility(self, project: str, config: str, values: dict[str, tuple[str, str]]) -> None:
+        held = self.raw.get(project, {}).get(config, {})
+        for name, (raw, visibility) in values.items():
+            if held.get(name) != raw:
+                raise RuntimeError(f"{name}: the request's value is not the one held")
+            self.shown[project][config][name] = visibility
 
 
 def run(store: FakeStore, *argv: str, stdin: str = "") -> tuple[int, str]:
@@ -217,6 +239,32 @@ class CopyTest(Base):
             for name, (_, computed) in store.secrets(split.VAULT, config).items():
                 home = split.SECRETS if name in secrets[config] else split.SETTINGS
                 self.assertEqual(store.secrets(home, config)[name][1], computed, f"{config} {name}")
+
+    def test_apply_keeps_each_values_visibility(self) -> None:
+        store = FakeStore()
+        code, out = run(store, "copy", str(self.inventory), "--apply")
+        self.assertEqual(code, 0)
+        self.assertNoValues(out)
+        settings = store.shown[split.SETTINGS]
+        self.assertEqual(settings["prd"]["SIGNAL_ORGS"], "unmasked")
+        self.assertEqual(settings["dev"]["SIGNAL_ORGS"], "unmasked")
+        self.assertEqual(settings["prd"]["PUBLIC_SITE_KEY"], "unmasked")
+        self.assertEqual(settings["prd"]["LOGGING_LEVEL"], "masked")
+        self.assertEqual(store.shown[split.SECRETS]["prd"]["DEEJAY_COG_API_KEY"], "masked")
+        self.assertIn(f"show   {split.SETTINGS}/prd SIGNAL_ORGS unmasked", out)
+
+    def test_a_copy_made_without_visibility_is_repaired_by_a_later_run(self) -> None:
+        store = FakeStore()
+        home = split.sort_names(split.vault_names(store), split.secret_names(split.load_inventory(self.inventory)))
+        for project, config, values in split.write_batches(split.plan_copy(store, home)):
+            store.write(project, config, values)
+        code, out = run(store, "copy", str(self.inventory))
+        self.assertIn(f"show   {split.SETTINGS}/prd SIGNAL_ORGS unmasked", out)
+        self.assertNotIn("copy   ", out)
+        run(store, "copy", str(self.inventory), "--apply")
+        self.assertEqual(store.shown[split.SETTINGS]["prd"]["SIGNAL_ORGS"], "unmasked")
+        code, out = run(store, "copy", str(self.inventory))
+        self.assertIn("No changes.", out)
 
     def test_a_second_run_copies_nothing(self) -> None:
         store = FakeStore()
