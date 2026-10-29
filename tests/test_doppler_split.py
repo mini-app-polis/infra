@@ -48,12 +48,15 @@ def vault() -> dict[str, dict[str, tuple[str, str | None]]]:
         "PUBLIC_SITE_KEY": "public",
         "LOGGING_LEVEL": "",
         "SIGNAL_ORGS": "mini-app-polis",
+        # prd may reference dev: the dev key, read in prd.
+        "PUBLIC_SITE_KEY_DEV": "${mini-app-polis-ecosystem.dev.PUBLIC_SITE_KEY}",
     }
     dev = {
         "DEEJAY_COG_API_KEY": "k-deejay-dev",
         "OPENAI_API_KEY": "${prd.OPENAI_API_KEY}",
         "SIGNAL_ORGS": "${mini-app-polis-ecosystem.prd.SIGNAL_ORGS}",
         "LOGGING_LEVEL": "DEBUG",
+        "PUBLIC_SITE_KEY": "public-dev",
     }
     return {"prd": {n: (v, None) for n, v in prd.items()}, "dev": {n: (v, None) for n, v in dev.items()}}
 
@@ -89,8 +92,16 @@ class FakeStore:
         return {n: (r, self._resolve(project, config, r)) for n, r in held.items()}
 
     def write(self, project: str, config: str, values: dict[str, str]) -> None:
+        # Like Doppler: the whole batch is refused when a reference in it does not resolve.
+        held = self.raw.setdefault(project, {}).setdefault(config, {})
+        before = dict(held)
+        held.update(values)
+        for name, raw in values.items():
+            if self._resolve(project, config, raw) is None:
+                held.clear()
+                held.update(before)
+                raise RuntimeError(f"{name} cannot resolve its reference")
         self.writes.append((project, config, dict(values)))
-        self.raw.setdefault(project, {}).setdefault(config, {}).update(values)
 
 
 def run(store: FakeStore, *argv: str, stdin: str = "") -> tuple[int, str]:
@@ -136,7 +147,7 @@ class SortTest(Base):
         self.assertEqual(code, 0)
         self.assertIn("secret  DEEJAY_COG_API_KEY", out)
         self.assertIn("setting SIGNAL_ORGS", out)
-        self.assertIn("6 secret(s), 3 setting(s).", out)
+        self.assertIn("6 secret(s), 4 setting(s).", out)
         self.assertNoValues(out)
 
 
@@ -196,11 +207,11 @@ class CopyTest(Base):
         self.assertEqual(settings["prd"]["LOGGING_LEVEL"], "")
         self.assertNotIn("SIGNAL_ORGS", secrets["prd"])
         self.assertNotIn("OPENAI_API_KEY", settings["prd"])
-        # prd before dev, secrets before settings: what is referenced exists first.
-        self.assertEqual(
-            [(p, c) for p, c, _ in store.writes],
-            [(split.SECRETS, "prd"), (split.SETTINGS, "prd"), (split.SECRETS, "dev"), (split.SETTINGS, "dev")],
-        )
+        # A prd value referencing dev is copied as a reference into dev's new home.
+        self.assertEqual(settings["prd"]["PUBLIC_SITE_KEY_DEV"], "${mini-app-polis-settings.dev.PUBLIC_SITE_KEY}")
+        # Plain values everywhere first, then references, so every target exists first.
+        written = [(p, c, any(split._reference(v) for v in values.values())) for p, c, values in store.writes]
+        self.assertEqual([r for _, _, r in written], sorted(r for _, _, r in written))
         # Every copied value resolves to what the vault's resolves to.
         for config in split.VAULT_CONFIGS:
             for name, (_, computed) in store.secrets(split.VAULT, config).items():

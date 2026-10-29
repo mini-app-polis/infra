@@ -157,7 +157,7 @@ def rehome(raw: str, config: str, home: Mapping[str, str]) -> str:
 
 def plan_copy(store: Store, home: Mapping[str, str]) -> list[tuple[str, str, dict[str, str]]]:
     """(project, config, values to write), prd before dev and secrets before
-    settings, so what a value references is written first."""
+    settings. :func:`write_batches` decides the order they are written in."""
     plans: list[tuple[str, str, dict[str, str]]] = []
     for config in VAULT_CONFIGS:
         source = store.secrets(VAULT, config)
@@ -171,6 +171,21 @@ def plan_copy(store: Store, home: Mapping[str, str]) -> list[tuple[str, str, dic
             changed = {name: value for name, value in values.items() if held.get(name, (None, None))[0] != value}
             plans.append((project, config, changed))
     return plans
+
+
+def write_batches(plans: Iterable[tuple[str, str, dict[str, str]]]) -> list[tuple[str, str, dict[str, str]]]:
+    """The plans as Doppler can take them: every plain value first, then every
+    reference. Doppler refuses a reference that does not resolve, and a value
+    in prd may reference dev as well as the other way round, so no order of
+    configs alone writes every target before what references it."""
+    plans = list(plans)
+    batches: list[tuple[str, str, dict[str, str]]] = []
+    for references in (False, True):
+        for project, config, values in plans:
+            part = {n: v for n, v in values.items() if (_reference(v) is not None) == references}
+            if part:
+                batches.append((project, config, part))
+    return batches
 
 
 # ── snapshot and verify ──────────────────────────────────────────────────
@@ -319,12 +334,14 @@ def run(argv: list[str], store: Store | None = None, stdin: Any = sys.stdin, out
             secrets = sum(1 for p in home.values() if p == SECRETS)
             say(f"{secrets} secret(s), {len(home) - secrets} setting(s).")
             return 0
+        plans = plan_copy(store, home)
         pending = 0
-        for project, config, values in plan_copy(store, home):
+        for project, config, values in plans:
             for name in sorted(values):
                 say(f"  copy   {project}/{config} {name}")
             pending += len(values)
-            if args.apply and values:
+        if args.apply:
+            for project, config, values in write_batches(plans):
                 store.write(project, config, values)
         if not pending:
             say("No changes.")
