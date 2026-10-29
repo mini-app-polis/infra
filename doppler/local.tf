@@ -44,3 +44,53 @@ resource "doppler_environment" "local_dev" {
   name             = local.environments["dev"]
   personal_configs = false
 }
+
+# The owner's working sessions. owner-session is read only with the owner's
+# own Doppler login and syncs nowhere: it holds the keys a session on the
+# workstation signs in to the API with (common-python-utils' file-task as
+# claude-session, rotator-cog's rotate.py as owner-console), and what the
+# API client needs to find the API. prd reads the vault's prd, dev its dev.
+
+locals {
+  owner_session = {
+    prd = {
+      CLAUDE_SESSION_API_KEY = "prd.CLAUDE_SESSION_API_KEY"
+      ENVIRONMENT            = "prd.ENVIRONMENT"
+      KAIANO_API_BASE_URL    = "prd.KAIANO_API_BASE_URL"
+      OWNER_CONSOLE_API_KEY  = "prd.OWNER_CONSOLE_API_KEY"
+    }
+    dev = {
+      CLAUDE_SESSION_API_KEY  = "dev.CLAUDE_SESSION_API_KEY"
+      ENVIRONMENT             = "dev.ENVIRONMENT"
+      KAIANO_API_BASE_URL_DEV = "dev.KAIANO_API_BASE_URL_DEV"
+      OWNER_CONSOLE_API_KEY   = "dev.OWNER_CONSOLE_API_KEY"
+    }
+  }
+
+  owner_session_references = [
+    for config, names in local.owner_session : {
+      project = doppler_project.owner_session.name
+      config  = config
+      refs = {
+        for name, source in names : name => {
+          ref        = "$${${local.vault}.${source}}"
+          visibility = null
+        }
+      }
+    }
+  ]
+}
+
+resource "doppler_project" "owner_session" {
+  name        = "owner-session"
+  description = "The owner's working sessions: references into ${local.vault}, read only with the owner's login, synced nowhere. Layout in mini-app-polis/infra doppler/."
+}
+
+resource "doppler_environment" "owner_session" {
+  for_each = local.owner_session
+
+  project          = doppler_project.owner_session.name
+  slug             = each.key
+  name             = local.environments[each.key]
+  personal_configs = false
+}
