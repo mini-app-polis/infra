@@ -18,3 +18,7 @@ tfplan
 # NOT ignored: .terraform.lock.hcl is committed. Lock it for both platforms
 # that run Terraform:
 #   terraform providers lock -platform=darwin_arm64 -platform=linux_amd64
+
+# scripts/doppler_split.py snapshot: hashes of resolved secret values, kept
+# on the workstation only.
+doppler-snapshot.json

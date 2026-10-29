@@ -236,6 +236,51 @@ beside them and are ignored):
 aws ssm get-parameters-by-path --region us-east-1 --path /mini-app-polis/<repository>/prd --query 'Parameters[].Name' --output text | tr '\t' '\n'
 ```
 
+## Splitting the vault
+
+The vault is being split in two. `mini-app-polis-secrets` holds what
+rotator-cog rotates: every entry of its `secrets/inventory.yaml` whose kind
+is rotated (machine-key, aws-access-key, generated, provider-api, manual),
+and the names a rotation also writes (an entry's `id_var` and `also`
+names, and the `_PREVIOUS` slot of each). `mini-app-polis-settings` holds
+every other value. Both have `prd` and `dev`, declared in
+`doppler/vault_split.tf`, beside `mini-app-polis-ecosystem`, which stays
+until every consumer is moved off it.
+
+`scripts/doppler_split.py` does the move, in four modes. None prints, logs
+or writes a value: they report names, and the snapshot holds hashes.
+
+```bash
+export DOPPLER_TOKEN="$(doppler configure get token --plain)"
+INVENTORY=../rotator-cog/secrets/inventory.yaml   # a rotator-cog checkout
+
+# Which project each vault name goes to.
+python3 scripts/doppler_split.py sort "$INVENTORY"
+
+# Copy each value into its new project and config: a dry run, then --apply.
+# Values the new project already holds unchanged are skipped, so it can be
+# run again.
+python3 scripts/doppler_split.py copy "$INVENTORY"
+python3 scripts/doppler_split.py copy "$INVENTORY" --apply
+
+# Before any consumer reference changes: the hash of every value each
+# consumer config resolves to, kept locally.
+terraform -chdir=doppler output -json references \
+  | python3 scripts/doppler_split.py snapshot --out doppler-snapshot.json
+
+# After: every reference points at the new projects (or spotify, the one
+# value kept outside the vault), resolves, and hashes as it did.
+terraform -chdir=doppler output -json references \
+  | python3 scripts/doppler_split.py verify --snapshot doppler-snapshot.json --allow spotify
+```
+
+`sort` and `copy` read the inventory with PyYAML (`pip install pyyaml`);
+the rest is the standard library. A value in the vault that is a reference
+into the vault (the vault's `dev` holds some as references to its `prd`)
+is copied as a reference to the name's new home. `verify` exits non-zero
+on any failure and names each failing name and config. Its unit tests run
+with `python3 -m unittest discover tests`.
+
 ## Copied constants
 
 Some values here are copies of ones another repository owns. The `plan` job
