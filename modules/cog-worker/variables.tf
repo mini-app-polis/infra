@@ -183,6 +183,17 @@ variable "max_concurrency" {
   }
 }
 
+variable "own_queue_url_variable" {
+  description = <<-DESC
+    For a cog that queues jobs for itself: the environment variable that
+    carries its own jobs queue's URL. Set, the worker's role may also
+    sqs:SendMessage to that queue and nothing else. Null (the default)
+    leaves the worker a consumer only.
+  DESC
+  type        = string
+  default     = null
+}
+
 variable "schedules" {
   description = <<-DESC
     Jobs the cog runs on a clock, by name. Each puts its body on the cog's

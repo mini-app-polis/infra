@@ -429,6 +429,10 @@ module "rotator" {
   reserved_concurrency = 1
   max_receive_count    = 1
 
+  # An incident is expanded by the worker into one rotation.job per secret,
+  # sent to this same queue in its one message group so tier order holds.
+  own_queue_url_variable = "ROTATOR_JOBS_QUEUE_URL"
+
   # The daily sweep, one message per Doppler config the rotator holds a
   # token for: each rotates what is due in that config. Anything urgent is
   # asked for on demand through the API instead.
