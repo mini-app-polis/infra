@@ -164,6 +164,16 @@ data "aws_iam_policy_document" "worker" {
     resources = [aws_sqs_queue.jobs.arn]
   }
 
+  # A cog that queues jobs for itself sends to its own queue, and only
+  # there (own_queue_url_variable).
+  dynamic "statement" {
+    for_each = var.own_queue_url_variable != null ? [1] : []
+    content {
+      actions   = ["sqs:SendMessage"]
+      resources = [aws_sqs_queue.jobs.arn]
+    }
+  }
+
   statement {
     actions   = ["logs:CreateLogStream", "logs:PutLogEvents"]
     resources = ["${aws_cloudwatch_log_group.worker.arn}:*"]
@@ -234,6 +244,9 @@ resource "aws_lambda_function" "worker" {
         KAIANO_API_BASE_URL = var.api_base_url
       },
       var.environment,
+      # Its own queue, for a cog that queues jobs for itself. The queue
+      # does not depend on the function, so this is no cycle.
+      var.own_queue_url_variable != null ? { (var.own_queue_url_variable) = aws_sqs_queue.jobs.url } : {},
       {
         SSM_PREFIX              = local.ssm_prefix
         SSM_PARAMETERS          = jsonencode(local.ssm_parameters)

@@ -201,13 +201,26 @@ terraform -chdir=doppler init
 terraform -chdir=doppler plan -out tfplan
 terraform -chdir=doppler apply tfplan
 
-terraform -chdir=doppler output -json references | python3 scripts/doppler_references.py
-terraform -chdir=doppler output -json references | python3 scripts/doppler_references.py --apply
+terraform -chdir=doppler output -json references | python3 scripts/doppler_references.py --create-missing
+terraform -chdir=doppler output -json references | python3 scripts/doppler_references.py --create-missing --apply
 ```
 
 The script prints what it would write and writes it only with `--apply`.
-It skips a reference to a name the vault does not hold, and reports it. That is an
-optional setting nobody has set, and the worker leaves it unset. Apply this
+A reference to a name the vault does not hold is a declared setting missing
+from the vault. Without `--create-missing` the script skips it, prints a
+`skip … (not in the vault)` line, and exits non-zero, so a missing name never
+goes unnoticed. With `--create-missing` it creates the name, empty, in the
+vault config the reference names (printed as a `create` line; written only
+with `--apply`), then writes the reference. A name already in the vault is
+never overwritten or emptied, and `--prune` is unaffected.
+
+Optional settings follow one convention. When a worker declares an optional
+setting (a name in its `ssm_optional_parameters`), the name is added to the
+vault empty, which `--create-missing` does. It is set later by editing the
+vault value only. Empty means the code default applies, and each empty vault
+name carries its code default in its Doppler note, written by hand (for
+example `default: ["main"], set in code`). Code defaults are never copied
+into vault values. Apply this
 root after the root's apply when a worker's parameter list changes, since
 it reads the root's `doppler_consumers` output.
 
