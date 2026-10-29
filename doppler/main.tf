@@ -1,13 +1,15 @@
 # Doppler's layout: a project per consumer, holding only what that consumer
 # reads, each value a reference into the one place it is edited.
 #
-# mini-app-polis-ecosystem (prd and dev) is the vault: every value is
-# edited there, once, and rotator-cog and rotate.py write only there. A
-# consumer's project holds references to it
-# (${mini-app-polis-ecosystem.prd.NAME}), under the names its code reads,
-# and its syncs carry only those. A change in the vault re-syncs every
-# config that references it. The one value kept outside it is Spotify's
-# refresh token (spotify.tf).
+# The vault is two projects, each with prd and dev (vault_split.tf):
+# mini-app-polis-secrets holds what rotator-cog rotates, and
+# mini-app-polis-settings every other value. Every value is edited there,
+# once. A consumer's project holds references to them
+# (${mini-app-polis-secrets.prd.NAME}, ${mini-app-polis-settings.prd.NAME}),
+# under the names its code reads, and its syncs carry only those; which of
+# the two a name is in is local.vault_home's to say. A change in the vault
+# re-syncs every config that references it. The one value kept outside it
+# is Spotify's refresh token (spotify.tf).
 #
 # Terraform owns the projects and the syncs, never a secret: a
 # doppler_secret resource keeps the value it resolves to in state, so the
@@ -15,8 +17,6 @@
 # `references` output instead (README.md, "Doppler layout").
 
 locals {
-  vault = "mini-app-polis-ecosystem"
-
   # Connections are made once, in the dashboard (Integrations); these are
   # their ids, which are not secrets.
   parameter_store_connection = "4b4a84c2-b695-4f88-8526-797cd5e06d66"
@@ -98,7 +98,7 @@ resource "doppler_project" "consumer" {
   for_each = local.parameter_store_consumers
 
   name        = each.key
-  description = "${each.value.description}: references into ${local.vault}, under the names its code reads. Layout in mini-app-polis/infra doppler/."
+  description = "${each.value.description}: references into ${local.vault_secrets} and ${local.vault_settings}, under the names its code reads. Layout in mini-app-polis/infra doppler/."
 }
 
 # A project made through the API has no environments, so no configs. Each
@@ -149,7 +149,7 @@ locals {
           refs = {
             for name, source in consumer[config] :
             name => {
-              ref        = contains(local.spotify_names, source) ? "$${${local.spotify}.prd.${source}}" : "$${${local.vault}.${config}.${source}}"
+              ref        = contains(local.spotify_names, source) ? "$${${local.spotify}.prd.${source}}" : "$${${lookup(local.vault_home, source, local.vault_settings)}.${config}.${source}}"
               visibility = null
             }
           }

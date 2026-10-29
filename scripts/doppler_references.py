@@ -21,9 +21,11 @@ value a config holds of its own is never pruned. A branch config
 with its root, so a name the input lists for the root is never pruned from
 the branch.
 
-A reference to a name the vault does not hold is a declared setting missing
-from the vault. Every declared optional setting is meant to be in the vault,
-empty until someone sets it (empty means the code default applies). Without
+The vault is the two projects every reference points into,
+mini-app-polis-secrets and mini-app-polis-settings; doppler/ picks which
+for each name. A reference to a name the vault does not hold is a declared
+setting missing from the vault. Every declared optional setting is meant
+to be in the vault, empty until someone sets it (empty means the code default applies). Without
 --create-missing such a reference is skipped and reported, and the run exits
 non-zero, so a missing name never goes unnoticed. With --create-missing the
 name is created, empty, in the vault config the reference names, and the

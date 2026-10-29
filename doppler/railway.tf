@@ -186,7 +186,7 @@ locals {
         config  = config
         refs = {
           for name in names :
-          name => { ref = "$${${local.vault}.${split("_", config)[0]}.${name}}", visibility = null }
+          name => { ref = "$${${lookup(local.vault_home, name, local.vault_settings)}.${split("_", config)[0]}.${name}}", visibility = null }
         }
       }
     ]

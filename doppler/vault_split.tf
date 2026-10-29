@@ -1,17 +1,28 @@
-# The vault, split in two: mini-app-polis-secrets holds what rotator-cog
+# The vault, in two projects: mini-app-polis-secrets holds what rotator-cog
 # rotates, mini-app-polis-settings everything else.
 #
-# Both sit beside mini-app-polis-ecosystem (main.tf's local.vault), which
-# stays the vault every reference points at until the consumers are moved.
-# scripts/doppler_split.py sorts the vault's names between the two, copies
-# the values over, and proves the move (README.md, "Splitting the vault").
+# Every reference this root builds points at one of the two, by name:
+# vault_home says which. A name in local.vault_secret_names is a secret;
+# every other name is a setting. That list is generated, never edited:
+# scripts/doppler_split.py generate writes it to vault_secret_names.tf.json
+# from rotator-cog's secrets/inventory.yaml, by the same rule its sort and
+# copy use (README.md, "Doppler layout").
+#
 # As everywhere in this root, Terraform owns the projects, never a value.
 
 locals {
+  vault_secrets  = "mini-app-polis-secrets"
+  vault_settings = "mini-app-polis-settings"
+
   split_vaults = {
-    "mini-app-polis-secrets"  = "The fleet's secrets: what rotator-cog rotates, and the names a rotation writes."
-    "mini-app-polis-settings" = "The fleet's settings: every value that is not a rotated secret."
+    (local.vault_secrets)  = "The fleet's secrets: what rotator-cog rotates, and the names a rotation writes."
+    (local.vault_settings) = "The fleet's settings: every value that is not a rotated secret."
   }
+
+  # The project of each secret name. Look a name up with
+  # lookup(local.vault_home, NAME, local.vault_settings): a name not here is
+  # a setting.
+  vault_home = { for name in local.vault_secret_names : name => local.vault_secrets }
 }
 
 resource "doppler_project" "split_vault" {
@@ -22,7 +33,7 @@ resource "doppler_project" "split_vault" {
 }
 
 # A project made through the API has no environments, so no configs: prd
-# and dev, as in the vault.
+# and dev.
 resource "doppler_environment" "split_vault" {
   for_each = {
     for pair in setproduct(keys(local.split_vaults), keys(local.environments)) :

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Split the vault into a secrets project and a settings project, and prove the move.
 
+    python3 scripts/doppler_split.py generate PATH/TO/secrets/inventory.yaml [--check]
     python3 scripts/doppler_split.py sort PATH/TO/secrets/inventory.yaml
     python3 scripts/doppler_split.py copy PATH/TO/secrets/inventory.yaml [--apply]
     terraform -chdir=doppler output -json references \\
@@ -8,17 +9,25 @@
     terraform -chdir=doppler output -json references \\
       | python3 scripts/doppler_split.py verify --snapshot FILE [--allow PROJECT ...]
 
-DOPPLER_TOKEN must be set (`doppler configure get token --plain`).
+DOPPLER_TOKEN must be set (`doppler configure get token --plain`), except
+for ``generate``.
 
-The vault (mini-app-polis-ecosystem, prd and dev) holds every value the
-fleet reads. It splits in two: mini-app-polis-secrets holds what
-rotator-cog rotates, mini-app-polis-settings everything else.
+mini-app-polis-ecosystem (prd and dev) is the single vault the values are
+copied from. They move to two projects: mini-app-polis-secrets holds what
+rotator-cog rotates, mini-app-polis-settings everything else. doppler/
+points every reference at one of the two, by the names ``generate`` writes.
 
-- ``sort`` puts each vault name in one of the two. A secret is every entry of
-  rotator-cog's ``secrets/inventory.yaml`` whose kind is rotated
-  (machine-key, aws-access-key, generated, provider-api, manual), with the
-  names its rotation also writes: its ``id_var``, its ``also`` names, and the
-  ``_PREVIOUS`` slot of each. Every other vault name is a setting.
+- ``generate`` writes the secret names to doppler/vault_secret_names.tf.json,
+  the local ``vault_secret_names`` that doppler/ sorts every reference by:
+  a name in it is referenced in mini-app-polis-secrets, any other in
+  mini-app-polis-settings. A secret is every entry of rotator-cog's
+  ``secrets/inventory.yaml`` whose kind is rotated (machine-key,
+  aws-access-key, generated, provider-api, manual), with the names its
+  rotation also writes: its ``id_var``, its ``also`` names, and the
+  ``_PREVIOUS`` slot of each. ``--check`` writes nothing and exits non-zero
+  when the file differs from what the inventory gives. Needs no token.
+- ``sort`` puts each vault name in one of the two by the same rule. Every
+  vault name that is not a secret is a setting.
 - ``copy`` copies each vault value into its new project, in the same config.
   A value that is a reference into the vault (the vault's dev holds some as
   references to its prd) is copied as a reference to the name's new home.
@@ -57,6 +66,8 @@ VAULT_CONFIGS = ("prd", "dev")
 ROTATED_KINDS = frozenset({"machine-key", "aws-access-key", "generated", "provider-api", "manual"})
 # Doppler adds these to every config; they are not ours to copy or check.
 BUILTIN = frozenset({"DOPPLER_PROJECT", "DOPPLER_CONFIG", "DOPPLER_ENVIRONMENT"})
+# The secret names as doppler/ reads them, written by ``generate``.
+GENERATED = Path(__file__).resolve().parents[1] / "doppler" / "vault_secret_names.tf.json"
 
 
 class Store(Protocol):
@@ -102,6 +113,15 @@ def secret_names(inventory: Mapping[str, Any]) -> frozenset[str]:
 def sort_names(vault_names: Iterable[str], secrets: frozenset[str]) -> dict[str, str]:
     """Each vault name and the project it moves to."""
     return {name: SECRETS if name in secrets else SETTINGS for name in vault_names}
+
+
+def generated(secrets: frozenset[str]) -> str:
+    """doppler/vault_secret_names.tf.json's content for these secret names."""
+    body = {
+        "//": "Written by scripts/doppler_split.py generate from rotator-cog's secrets/inventory.yaml; do not edit.",
+        "locals": {"vault_secret_names": sorted(secrets)},
+    }
+    return json.dumps(body, indent=2) + "\n"
 
 
 def vault_names(store: Store) -> set[str]:
@@ -251,9 +271,12 @@ def _store() -> Store:
 def run(argv: list[str], store: Store | None = None, stdin: Any = sys.stdin, out: Any = sys.stdout) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     modes = parser.add_subparsers(dest="mode", required=True)
-    for mode in ("sort", "copy"):
+    for mode in ("generate", "sort", "copy"):
         sub = modes.add_parser(mode)
         sub.add_argument("inventory", type=Path, help="rotator-cog's secrets/inventory.yaml")
+        if mode == "generate":
+            sub.add_argument("--out", type=Path, default=GENERATED, help="where to write (default: %(default)s)")
+            sub.add_argument("--check", action="store_true", help="write nothing; fail when the file is out of date")
         if mode == "copy":
             sub.add_argument("--apply", action="store_true", help="write (default: only print)")
     taking = modes.add_parser("snapshot")
@@ -265,10 +288,28 @@ def run(argv: list[str], store: Store | None = None, stdin: Any = sys.stdin, out
         help="another project a consumer may reference (spotify)",
     )
     args = parser.parse_args(argv)
-    store = store or _store()
 
     def say(line: str) -> None:
         print(line, file=out)
+
+    if args.mode == "generate":
+        names = secret_names(load_inventory(args.inventory))
+        content = generated(names)
+        current = args.out.read_text() if args.out.exists() else None
+        if args.check:
+            if current != content:
+                say(f"{args.out} is out of date with {args.inventory}: run generate and commit the result.")
+                return 1
+            say(f"{args.out} matches {args.inventory}: {len(names)} secret name(s).")
+            return 0
+        if current == content:
+            say(f"{args.out} is up to date: {len(names)} secret name(s).")
+        else:
+            args.out.write_text(content)
+            say(f"Wrote {len(names)} secret name(s) to {args.out}.")
+        return 0
+
+    store = store or _store()
 
     if args.mode in ("sort", "copy"):
         home = sort_names(vault_names(store), secret_names(load_inventory(args.inventory)))

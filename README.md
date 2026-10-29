@@ -150,13 +150,34 @@ pbpaste | tr -d '\r\n' | doppler secrets set ROTATOR_CLOUDFLARE_TURNSTILE_TOKEN 
 
 ## Doppler layout
 
-`mini-app-polis-ecosystem` (`prd` and `dev`) is the vault: every value is
-edited there, once, and rotator-cog and `rotate.py` write only there. Each
-consumer gets a Doppler project of its own, named for its repository,
-whose configs hold only what it reads. Each value there is a reference
-into the vault (`${mini-app-polis-ecosystem.prd.NAME}`), named as the
-consumer's code reads it, and the consumer's syncs carry only those. A
-change in the vault re-syncs every config that references it.
+The vault is two projects, each with `prd` and `dev`
+(`doppler/vault_split.tf`): `mini-app-polis-secrets` holds what rotator-cog
+rotates, and `mini-app-polis-settings` every other value. Every value is
+edited there, once. Each consumer gets a Doppler project of its own, named
+for its repository, whose configs hold only what it reads. Each value there
+is a reference into the vault (`${mini-app-polis-secrets.prd.NAME}` or
+`${mini-app-polis-settings.prd.NAME}`), named as the consumer's code reads
+it, and the consumer's syncs carry only those. A change in the vault
+re-syncs every config that references it. Spotify's refresh token is the
+one value kept outside it (`doppler/spotify.tf`).
+
+Which of the two projects a name is in is decided in one place. A secret
+is every entry of rotator-cog's `secrets/inventory.yaml` whose kind is
+rotated (machine-key, aws-access-key, generated, provider-api, manual),
+with the names a rotation also writes (an entry's `id_var` and `also`
+names, and the `_PREVIOUS` slot of each); every other name is a setting.
+`scripts/doppler_split.py generate` applies that rule to the inventory and
+writes the secret names to `doppler/vault_secret_names.tf.json`, the
+`local.vault_secret_names` every reference in `doppler/` is sorted by. The
+file is generated, never edited. When the inventory gains or loses a
+rotated entry, regenerate it, commit it, and apply this root and the
+references (below), so the name's references move with it:
+
+```bash
+INVENTORY=../rotator-cog/secrets/inventory.yaml   # a rotator-cog checkout
+python3 scripts/doppler_split.py generate "$INVENTORY"
+python3 scripts/doppler_split.py generate "$INVENTORY" --check   # exits non-zero when out of date
+```
 
 A consumer's config may also hold values of its own that are not
 references, such as the rotator's Railway tokens (above), or a setting
@@ -240,17 +261,12 @@ aws ssm get-parameters-by-path --region us-east-1 --path /mini-app-polis/<reposi
 
 ## Splitting the vault
 
-The vault is being split in two. `mini-app-polis-secrets` holds what
-rotator-cog rotates: every entry of its `secrets/inventory.yaml` whose kind
-is rotated (machine-key, aws-access-key, generated, provider-api, manual),
-and the names a rotation also writes (an entry's `id_var` and `also`
-names, and the `_PREVIOUS` slot of each). `mini-app-polis-settings` holds
-every other value. Both have `prd` and `dev`, declared in
-`doppler/vault_split.tf`, beside `mini-app-polis-ecosystem`, which stays
-until every consumer is moved off it.
-
-`scripts/doppler_split.py` does the move, in four modes. None prints, logs
-or writes a value: they report names, and the snapshot holds hashes.
+The values come from `mini-app-polis-ecosystem` (`prd` and `dev`), the
+single vault the two projects replace. It stays, unreferenced, until it is
+retired. `scripts/doppler_split.py` copies its values into the two
+projects, by the same rule `generate` writes for `doppler/` (above), and
+proves the move. None of its modes prints, logs or writes a value: they
+report names, and the snapshot holds hashes.
 
 ```bash
 export DOPPLER_TOKEN="$(doppler configure get token --plain)"
@@ -265,8 +281,8 @@ python3 scripts/doppler_split.py sort "$INVENTORY"
 python3 scripts/doppler_split.py copy "$INVENTORY"
 python3 scripts/doppler_split.py copy "$INVENTORY" --apply
 
-# Before any consumer reference changes: the hash of every value each
-# consumer config resolves to, kept locally.
+# Before the references are written: the hash of every value each consumer
+# config resolves to, kept locally.
 terraform -chdir=doppler output -json references \
   | python3 scripts/doppler_split.py snapshot --out doppler-snapshot.json
 
@@ -276,8 +292,8 @@ terraform -chdir=doppler output -json references \
   | python3 scripts/doppler_split.py verify --snapshot doppler-snapshot.json --allow spotify
 ```
 
-`sort` and `copy` read the inventory with PyYAML (`pip install pyyaml`);
-the rest is the standard library. A value in the vault that is a reference
+`generate`, `sort` and `copy` read the inventory with PyYAML
+(`pip install pyyaml`); the rest is the standard library. A value in the vault that is a reference
 into the vault (the vault's `dev` holds some as references to its `prd`)
 is copied as a reference to the name's new home. `verify` exits non-zero
 on any failure and names each failing name and config. Its unit tests run
