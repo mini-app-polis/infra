@@ -3,7 +3,7 @@
 
     terraform -chdir=doppler output -json references \\
       | DOPPLER_TOKEN="$(doppler configure get token --plain)" \\
-        python3 scripts/doppler_references.py [--apply] [--prune]
+        python3 scripts/doppler_references.py [--apply] [--prune] [--create-missing]
 
 doppler/ declares the projects and their syncs; this writes what is in
 them. Terraform cannot: a doppler_secret resource keeps the value its
@@ -14,12 +14,19 @@ Reads {project: {config: {NAME: "${vault.config.SOURCE}"}}} on stdin (or
 for each config, sets every NAME whose reference differs from what the
 config holds. Doppler refuses a reference to a secret that is itself a
 reference, so where the source is one, NAME references its target instead.
-Without --apply it only prints what it would do. A reference
-to a name the vault does not hold is skipped and reported, never written:
-that is an optional setting nobody has set, and the worker treats it as
-unset. With --prune, names the config holds but the input does not are
-deleted, if they are references: a value a config holds of its own is
-never pruned.
+Without --apply it only prints what it would do. With --prune, names the
+config holds but the input does not are deleted, if they are references: a
+value a config holds of its own is never pruned.
+
+A reference to a name the vault does not hold is a declared setting missing
+from the vault. Every declared optional setting is meant to be in the vault,
+empty until someone sets it (empty means the code default applies). Without
+--create-missing such a reference is skipped and reported, and the run exits
+non-zero, so a missing name never goes unnoticed. With --create-missing the
+name is created, empty, in the vault config the reference names, and the
+reference is then written; without --apply that is printed as a `create`
+line and nothing is written. A name the vault already holds is never
+created, overwritten or emptied.
 
 Never prints or keeps a secret. It reads raw values, never resolved ones:
 in a consumer's config they are the reference strings, and of the vault's
@@ -134,6 +141,20 @@ class Doppler:
     def raw(self, project: str, config: str) -> dict[str, str]:
         return {name: raw for name, (raw, _) in self.held(project, config).items()}
 
+    def create_empty(self, project: str, config: str, name: str) -> bool:
+        """Create ``name`` in a config with an empty value, unless it is there.
+
+        Reads the config's names afresh first, so a name created since they
+        were cached (by hand or another run) is not emptied. Returns whether
+        it created the name. Only an empty value is ever sent.
+        """
+        self._names.pop((project, config), None)
+        if name in self.names(project, config):
+            return False
+        self.write(project, config, {name: ""})
+        self._names[(project, config)].add(name)
+        return True
+
     def write(self, project: str, config: str, secrets: dict[str, str | None]) -> None:
         # The response echoes every secret, resolved; it is dropped unread.
         self._request("POST", "/configs/config/secrets", body={"project": project, "config": config, "secrets": secrets})
@@ -147,16 +168,30 @@ class Doppler:
         self._request("POST", "/configs/config/secrets", body={"project": project, "config": config, "change_requests": requests})
 
 
+Missing = tuple[str, str, str]
+"""A vault name a reference needs and the vault does not hold: (project, config, name)."""
+
+
 def plan(
-    doppler: Doppler, project: str, config: str, wanted: dict[str, str | dict], prune: bool
-) -> tuple[dict[str, str | None], dict[str, tuple[str, str]], list[str]]:
-    """What to write to one config: values, visibilities, and the references skipped for want of a source.
+    doppler: Doppler,
+    project: str,
+    config: str,
+    wanted: dict[str, str | dict],
+    prune: bool,
+    create_missing: bool = False,
+) -> tuple[dict[str, str | None], dict[str, tuple[str, str]], list[str], list[Missing]]:
+    """What to write to one config: values, visibilities, the references
+    skipped for want of a source, and the vault names to create.
 
     Each wanted value is a reference, or {"ref": reference, "visibility":
     "masked" | "unmasked" | None}; an unmasked one syncs to GitHub as an
-    Actions variable.
+    Actions variable. Without ``create_missing`` a reference whose source
+    name the vault does not hold is skipped; with it, the reference is
+    planned as written and its source name is returned to be created empty
+    first.
     """
     skipped = []
+    missing: list[Missing] = []
     present = {}
     visibility = {}
     for name, spec in wanted.items():
@@ -168,7 +203,12 @@ def plan(
             raise SystemExit(f"{project}/{config} {name}: {reference!r} is not a ${{project.config.NAME}} reference")
         source_project, source_config, source_name = match.groups()
         if source_name not in doppler.names(source_project, source_config):
-            skipped.append(f"{name} -> {reference}")
+            if not create_missing:
+                skipped.append(f"{name} -> {reference}")
+                continue
+            # Created empty, it is a value, not a reference: no hop.
+            missing.append((source_project, source_config, source_name))
+            present[name] = reference
             continue
         # One hop: the vault's dev config holds some values as references
         # to its prd config.
@@ -186,13 +226,18 @@ def plan(
         for name, wanted_visibility in visibility.items()
         if name in present and held.get(name, ("", None))[1] != wanted_visibility
     }
-    return changes, visibilities, skipped
+    return changes, visibilities, skipped, missing
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--apply", action="store_true", help="write the changes (default: only print them)")
     parser.add_argument("--prune", action="store_true", help="also delete names the input does not list")
+    parser.add_argument(
+        "--create-missing",
+        action="store_true",
+        help="create, empty, each vault name a reference needs and the vault lacks (written only with --apply)",
+    )
     args = parser.parse_args()
 
     token = os.environ.get("DOPPLER_TOKEN")
@@ -203,16 +248,33 @@ def main() -> int:
 
     pending = 0
     failed = 0
+    skips = 0
+    creates: set[Missing] = set()
     for project in sorted(references):
         for config in sorted(references[project]):
             try:
-                changes, visibilities, skipped = plan(doppler, project, config, references[project][config], args.prune)
+                changes, visibilities, skipped, missing = plan(
+                    doppler, project, config, references[project][config], args.prune, args.create_missing
+                )
             except SystemExit as error:
                 print(f"  FAILED {project}/{config}: {error}")
                 failed += 1
                 continue
             for line in skipped:
                 print(f"  skip   {project}/{config} {line} (not in the vault)")
+            skips += len(skipped)
+            new = [m for m in dict.fromkeys(missing) if m not in creates]
+            for vault_project, vault_config, name in new:
+                print(f"  create {vault_project}/{vault_config} {name} (empty)")
+            creates.update(new)
+            if args.apply and new:
+                try:
+                    for vault_project, vault_config, name in new:
+                        doppler.create_empty(vault_project, vault_config, name)
+                except SystemExit as error:
+                    print(f"  FAILED {project}/{config}: {error}")
+                    failed += 1
+                    continue
             for name in sorted(changes):
                 verb = "delete" if changes[name] is None else "set"
                 print(f"  {verb:<6} {project}/{config} {name}" + ("" if changes[name] is None else f" = {changes[name]}"))
@@ -230,6 +292,7 @@ def main() -> int:
                     continue
             pending += len(changes) + len(visibilities)
 
+    pending += len(creates)
     if failed:
         print(f"{failed} config(s) failed; the others were written. Fix and run again.")
         return 1
@@ -239,6 +302,12 @@ def main() -> int:
         print(f"Wrote {pending} change(s).")
     else:
         print(f"{pending} change(s) to write. Run again with --apply to write them.")
+    if skips:
+        print(
+            f"{skips} reference(s) skipped: their vault names do not exist. "
+            "Run again with --create-missing to create them empty."
+        )
+        return 1
     return 0
 
 
