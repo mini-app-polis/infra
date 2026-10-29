@@ -159,6 +159,7 @@ locals {
     local.github_references,
     local.railway_references,
     local.local_dev_references,
+    local.owner_session_references,
   )
 }
 

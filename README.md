@@ -171,7 +171,9 @@ root's own project, `infra`, holds the alert address `account.tf` reads.
 Local runs use the same projects: each repository's `doppler.yaml` pins
 its own project's `dev`, so `doppler run` sees what production sees, under
 the same names. A repository whose project exists only for GitHub Actions
-gets its `dev` in `doppler/local.tf`.
+gets its `dev` in `doppler/local.tf`. The owner's own working sessions
+read `owner-session` (`prd` and `dev`, also in `doppler/local.tf`), which
+syncs nowhere and holds the keys a session signs in to the API with.
 
 GitHub Actions reads the same way (`doppler/github.tf`). A repository's
 secrets and variables are its project's `ci` environment, synced to the
