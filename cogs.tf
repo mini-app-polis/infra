@@ -211,10 +211,12 @@ module "task_manager" {
   handler      = "task_manager_cog.worker.lambda_handler"
   architecture = "arm64"
 
-  # A job is a handful of Asana requests: look the task up, page the board's
-  # names, resolve tags, create. Each has the client's 30 s timeout, so 120 s
-  # covers several slow ones; the worker stops itself 20 s short of it.
-  timeout_seconds = 120
+  # The longest job is the sweep: the whole board read and checked, its
+  # records written, then agent dispatch, which makes several GitHub requests
+  # for each Ready task's repository. 300 s leaves room for slow requests;
+  # the worker stops itself 20 s short of it, and dispatch starts no task
+  # with less than 30 s left.
+  timeout_seconds = 300
   memory_mb       = 256
 
   # Serialised: ids are minted as the highest on the board plus one, which
