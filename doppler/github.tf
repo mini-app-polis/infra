@@ -211,8 +211,8 @@ locals {
         project = local.github_configs[key].project
         config  = local.github_configs[key].slug
         refs = merge(
-          { for name, source in target.secrets : name => { ref = "$${${local.vault}.${source}}", visibility = "masked" } },
-          { for name, source in target.variables : name => { ref = "$${${local.vault}.${source}}", visibility = "unmasked" } },
+          { for name, source in target.secrets : name => { ref = "$${${lookup(local.vault_home, split(".", source)[1], local.vault_settings)}.${source}}", visibility = "masked" } },
+          { for name, source in target.variables : name => { ref = "$${${lookup(local.vault_home, split(".", source)[1], local.vault_settings)}.${source}}", visibility = "unmasked" } },
         )
       }
     ],
@@ -221,14 +221,14 @@ locals {
         project = "github-org"
         config  = "ci"
         refs = merge(
-          { for name, source in local.github_organisation.secrets : name => { ref = "$${${local.vault}.${source}}", visibility = "masked" } },
-          { for name, source in local.github_organisation.variables : name => { ref = "$${${local.vault}.${source}}", visibility = "unmasked" } },
+          { for name, source in local.github_organisation.secrets : name => { ref = "$${${lookup(local.vault_home, split(".", source)[1], local.vault_settings)}.${source}}", visibility = "masked" } },
+          { for name, source in local.github_organisation.variables : name => { ref = "$${${lookup(local.vault_home, split(".", source)[1], local.vault_settings)}.${source}}", visibility = "unmasked" } },
         )
       },
       {
         project = "agent-github"
         config  = "dependabot"
-        refs    = { for name, source in local.github_dependabot : name => { ref = "$${${local.vault}.${source}}", visibility = "masked" } }
+        refs    = { for name, source in local.github_dependabot : name => { ref = "$${${lookup(local.vault_home, split(".", source)[1], local.vault_settings)}.${source}}", visibility = "masked" } }
       },
     ],
   )
@@ -252,7 +252,7 @@ resource "doppler_project" "repository" {
   for_each = local.github_projects
 
   name        = each.key
-  description = "${each.key}: references into ${local.vault}, under the names its code and workflows read. Layout in mini-app-polis/infra doppler/."
+  description = "${each.key}: references into ${local.vault_secrets} and ${local.vault_settings}, under the names its code and workflows read. Layout in mini-app-polis/infra doppler/."
 }
 
 resource "doppler_environment" "github_org" {

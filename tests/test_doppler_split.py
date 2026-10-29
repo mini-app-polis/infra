@@ -140,6 +140,38 @@ class SortTest(Base):
         self.assertNoValues(out)
 
 
+class GenerateTest(Base):
+    def generate(self, *extra: str) -> tuple[int, str]:
+        # No store: generate must not need Doppler or a token.
+        out = io.StringIO()
+        code = split.run(["generate", str(self.inventory), "--out", str(self.tmp / "names.tf.json"), *extra], out=out)
+        return code, out.getvalue()
+
+    def test_writes_the_same_secret_names_sort_uses(self) -> None:
+        code, _ = self.generate()
+        self.assertEqual(code, 0)
+        body = json.loads((self.tmp / "names.tf.json").read_text())
+        names = body["locals"]["vault_secret_names"]
+        self.assertEqual(names, sorted(split.secret_names(split.load_inventory(self.inventory))))
+
+    def test_check_passes_when_current_and_fails_when_the_inventory_moves_on(self) -> None:
+        code, out = self.generate("--check")
+        self.assertEqual(code, 1, out)
+        self.assertEqual(self.generate()[0], 0)
+        self.assertEqual(self.generate("--check")[0], 0)
+        self.inventory.write_text(INVENTORY + "  NEW_API_KEY: {kind: manual}\n")
+        code, out = self.generate("--check")
+        self.assertEqual(code, 1)
+        self.assertIn("out of date", out)
+
+    def test_the_committed_file_is_a_sorted_list_of_names(self) -> None:
+        body = json.loads(split.GENERATED.read_text())
+        names = body["locals"]["vault_secret_names"]
+        self.assertTrue(names)
+        self.assertEqual(names, sorted(set(names)))
+        self.assertEqual(split.GENERATED.read_text(), split.generated(frozenset(names)))
+
+
 class CopyTest(Base):
     def test_a_dry_run_writes_nothing_and_names_each_copy(self) -> None:
         store = FakeStore()

@@ -28,7 +28,7 @@ locals {
       config  = "dev"
       refs = {
         for name in names : name => {
-          ref        = contains(local.spotify_names, name) ? "$${${local.spotify}.prd.${name}}" : "$${${local.vault}.dev.${name}}"
+          ref        = contains(local.spotify_names, name) ? "$${${local.spotify}.prd.${name}}" : "$${${lookup(local.vault_home, name, local.vault_settings)}.dev.${name}}"
           visibility = null
         }
       }
@@ -73,7 +73,7 @@ locals {
       config  = config
       refs = {
         for name, source in names : name => {
-          ref        = "$${${local.vault}.${source}}"
+          ref        = "$${${lookup(local.vault_home, split(".", source)[1], local.vault_settings)}.${source}}"
           visibility = null
         }
       }
@@ -83,7 +83,7 @@ locals {
 
 resource "doppler_project" "owner_session" {
   name        = "owner-session"
-  description = "The owner's working sessions: references into ${local.vault}, read only with the owner's login, synced nowhere. Layout in mini-app-polis/infra doppler/."
+  description = "The owner's working sessions: references into ${local.vault_secrets} and ${local.vault_settings}, read only with the owner's login, synced nowhere. Layout in mini-app-polis/infra doppler/."
 }
 
 resource "doppler_environment" "owner_session" {
