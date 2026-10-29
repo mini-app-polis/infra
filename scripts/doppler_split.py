@@ -31,8 +31,11 @@ points every reference at one of the two, by the names ``generate`` writes.
 - ``copy`` copies each vault value into its new project, in the same config.
   A value that is a reference into the vault (the vault's dev holds some as
   references to its prd) is copied as a reference to the name's new home.
-  Dry run by default; ``--apply`` writes. A value the new project already
-  holds unchanged is skipped, so it can be run again.
+  Each value keeps its visibility (masked, unmasked or restricted): a
+  reference takes its visibility from the value it points at, and an
+  unmasked value is what a GitHub Actions variable syncs from. Dry run by
+  default; ``--apply`` writes. A value the new project already holds
+  unchanged, with the same visibility, is skipped, so it can be run again.
 - ``snapshot`` writes, for every consumer project and config named on stdin,
   the SHA-256 of each resolved value to a local file.
 - ``verify`` checks, for every consumer project and config named on stdin,
@@ -79,6 +82,14 @@ class Store(Protocol):
 
     def write(self, project: str, config: str, values: dict[str, str]) -> None:
         """Set each name to its (raw) value."""
+        ...
+
+    def visibility(self, project: str, config: str) -> dict[str, str | None]:
+        """Each name's visibility: masked, unmasked or restricted."""
+        ...
+
+    def set_visibility(self, project: str, config: str, values: dict[str, tuple[str, str]]) -> None:
+        """Set each name's visibility; the request carries its raw value too."""
         ...
 
 
@@ -157,7 +168,7 @@ def rehome(raw: str, config: str, home: Mapping[str, str]) -> str:
 
 def plan_copy(store: Store, home: Mapping[str, str]) -> list[tuple[str, str, dict[str, str]]]:
     """(project, config, values to write), prd before dev and secrets before
-    settings, so what a value references is written first."""
+    settings. :func:`write_batches` decides the order they are written in."""
     plans: list[tuple[str, str, dict[str, str]]] = []
     for config in VAULT_CONFIGS:
         source = store.secrets(VAULT, config)
@@ -169,6 +180,43 @@ def plan_copy(store: Store, home: Mapping[str, str]) -> list[tuple[str, str, dic
                 if name not in BUILTIN and home.get(name) == project
             }
             changed = {name: value for name, value in values.items() if held.get(name, (None, None))[0] != value}
+            plans.append((project, config, changed))
+    return plans
+
+
+def write_batches(plans: Iterable[tuple[str, str, dict[str, str]]]) -> list[tuple[str, str, dict[str, str]]]:
+    """The plans as Doppler can take them: every plain value first, then every
+    reference. Doppler refuses a reference that does not resolve, and a value
+    in prd may reference dev as well as the other way round, so no order of
+    configs alone writes every target before what references it."""
+    plans = list(plans)
+    batches: list[tuple[str, str, dict[str, str]]] = []
+    for references in (False, True):
+        for project, config, values in plans:
+            part = {n: v for n, v in values.items() if (_reference(v) is not None) == references}
+            if part:
+                batches.append((project, config, part))
+    return batches
+
+
+def plan_visibility(store: Store, home: Mapping[str, str]) -> list[tuple[str, str, dict[str, tuple[str, str]]]]:
+    """(project, config, {name: (raw value, visibility)}) for each copied
+    value whose visibility differs from the vault's. The raw value is the one
+    the copy writes, so the plan holds whether or not the copy has run."""
+    plans: list[tuple[str, str, dict[str, tuple[str, str]]]] = []
+    for config in VAULT_CONFIGS:
+        source = store.secrets(VAULT, config)
+        wanted = store.visibility(VAULT, config)
+        for project in (SECRETS, SETTINGS):
+            held = store.visibility(project, config)
+            changed = {
+                name: (rehome(raw, config, home), shown)
+                for name, (raw, _) in source.items()
+                if name not in BUILTIN
+                and home.get(name) == project
+                and (shown := wanted.get(name))
+                and held.get(name) != shown
+            }
             plans.append((project, config, changed))
     return plans
 
@@ -257,6 +305,12 @@ class DopplerApi:
         # The response echoes every secret, resolved; write drops it unread.
         self._doppler.write(project, config, dict(values))
 
+    def visibility(self, project: str, config: str) -> dict[str, str | None]:
+        return {name: shown for name, (_, shown) in self._doppler.held(project, config).items()}
+
+    def set_visibility(self, project: str, config: str, values: dict[str, tuple[str, str]]) -> None:
+        self._doppler.set_visibility(project, config, dict(values))
+
 
 # ── main ─────────────────────────────────────────────────────────────────
 
@@ -319,13 +373,22 @@ def run(argv: list[str], store: Store | None = None, stdin: Any = sys.stdin, out
             secrets = sum(1 for p in home.values() if p == SECRETS)
             say(f"{secrets} secret(s), {len(home) - secrets} setting(s).")
             return 0
+        plans = plan_copy(store, home)
         pending = 0
-        for project, config, values in plan_copy(store, home):
+        for project, config, values in plans:
             for name in sorted(values):
                 say(f"  copy   {project}/{config} {name}")
             pending += len(values)
-            if args.apply and values:
+        if args.apply:
+            for project, config, values in write_batches(plans):
                 store.write(project, config, values)
+        # Visibility after the values, so every name it sets exists.
+        for project, config, shown in plan_visibility(store, home):
+            for name in sorted(shown):
+                say(f"  show   {project}/{config} {name} {shown[name][1]}")
+            pending += len(shown)
+            if args.apply and shown:
+                store.set_visibility(project, config, shown)
         if not pending:
             say("No changes.")
         elif args.apply:
