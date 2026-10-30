@@ -206,8 +206,10 @@ only one environment of one service changes from its code default.
 
 The Lambda workers and this root have projects that sync to Parameter
 Store. Each one's `prd` syncs to `/mini-app-polis/<repository>/prd/`; a
-worker's `dev` holds the same references into the vault's `dev`. This
-root's own project, `infra`, holds the alert address `account.tf` reads.
+worker's `dev` holds the same references into the vault's `dev`, plus
+any its local runs alone read (`local.worker_local_extras` in
+`doppler/main.tf`). This root's own project, `infra`, holds the alert
+address `account.tf` reads.
 
 Local runs use the same projects: each repository's `doppler.yaml` pins
 its own project's `dev`, so `doppler run` sees what production sees, under
