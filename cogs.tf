@@ -80,6 +80,15 @@ module "deejay" {
     DEEJAY_COG_API_KEY      = "DEEJAY_COG_API_KEY"
     GOOGLE_CREDENTIALS_JSON = "GOOGLE_CREDENTIALS_JSON"
   }
+  # Files with no usable tags go on to the fingerprint function
+  # (deejay-cog ADR-0007, decision 3).
+  send_queues = {
+    DEEJAY_FINGERPRINT_QUEUE_URL = {
+      url = module.deejay_fingerprint.queue_url
+      arn = module.deejay_fingerprint.queue_arn
+    }
+  }
+
   ssm_optional_parameters = {
     LOGGING_LEVEL             = "LOGGING_LEVEL"
     SENTRY_DSN_COGS           = "SENTRY_DSN_COGS"
@@ -87,6 +96,49 @@ module "deejay" {
     SPOTIPY_CLIENT_ID         = "SPOTIPY_CLIENT_ID"
     SPOTIPY_CLIENT_SECRET     = "SPOTIPY_CLIENT_SECRET"
     SPOTIPY_REFRESH_TOKEN     = "SPOTIPY_REFRESH_TOKEN"
+  }
+}
+
+# deejay-cog's second function: identifies a music file with no usable tags
+# by its fingerprint (deejay-cog ADR-0007, decisions 3 and 4). It runs from
+# deejay-cog's package, deployed through its own role, with chromaprint's
+# fpcalc from the layer. Kept apart from the deejay worker so only this
+# function carries the binary, and so the AcoustID rate limit (3 requests a
+# second) and its longer per-file time hold up nothing else.
+module "deejay_fingerprint" {
+  source = "./modules/cog-worker"
+
+  name                     = "deejay-fingerprint"
+  github_repo              = "mini-app-polis/deejay-cog"
+  github_oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
+  alert_email              = local.alert_email
+  api_base_url             = var.kaiano_api_base_url
+
+  # The handler module is deejay-cog's to build. x86_64, like the
+  # deejay worker, and the only architecture chromaprint ships fpcalc for.
+  handler      = "deejay_cog.fingerprint.lambda_handler"
+  architecture = "x86_64"
+  layers       = [aws_lambda_layer_version.fpcalc.arn]
+
+  timeout_seconds = 300
+  memory_mb       = 1024
+
+  # One at a time, for AcoustID's rate limit. FIFO with one message group,
+  # as the deejay worker is, so files queue without being throttled.
+  fifo                 = true
+  reserved_concurrency = 1
+  max_receive_count    = 3
+
+  # Reads deejay-cog's own Doppler project, like the deejay worker.
+  ssm_parameters = {
+    ACOUSTID_API_KEY        = "ACOUSTID_API_KEY"
+    DEEJAY_COG_API_KEY      = "DEEJAY_COG_API_KEY"
+    GOOGLE_CREDENTIALS_JSON = "GOOGLE_CREDENTIALS_JSON"
+  }
+  ssm_optional_parameters = {
+    LOGGING_LEVEL        = "LOGGING_LEVEL"
+    RETAG_MIN_CONFIDENCE = "RETAG_MIN_CONFIDENCE"
+    SENTRY_DSN_COGS      = "SENTRY_DSN_COGS"
   }
 }
 
@@ -338,6 +390,10 @@ module "watcher" {
   ssm_optional_parameters = {
     LOGGING_LEVEL   = "LOGGING_LEVEL"
     SENTRY_DSN_COGS = "SENTRY_DSN_COGS"
+    # The music upload folder, for the music-uploads watcher. Optional until
+    # that watcher ships and the folder id is in the vault: a required name
+    # with no value fails every watcher's cold start.
+    MUSIC_UPLOAD_SOURCE_FOLDER_ID = "MUSIC_UPLOAD_SOURCE_FOLDER_ID"
   }
 }
 

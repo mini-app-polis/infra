@@ -101,6 +101,26 @@ in Doppler), add it to the `cogs` output and `cog_max_in_flight_seconds` in
 `outputs.tf`, apply, confirm the alert subscription email, and set the three
 repository variables from `terraform output cogs` in the cog's repository.
 
+## Lambda layers
+
+`layers.tf` holds the native binaries a function needs and its Python package
+cannot carry. Today that is chromaprint's static `fpcalc`, for deejay-cog's
+fingerprint function (`module.deejay_fingerprint`): Lambda unpacks a layer
+under `/opt`, and the binary is at `/opt/bin/fpcalc`, on the function's
+`PATH`.
+
+The binary is not committed. `scripts/fetch_fpcalc.py` downloads the pinned
+release, refuses it unless its SHA-256 matches, and leaves it in `build/`,
+where `layers.tf` zips it. CI runs it before every plan and apply; run it
+once before planning on a workstation:
+
+```sh
+python3 scripts/fetch_fpcalc.py
+```
+
+A new version changes the script's `VERSION` and `SHA256` together. The layer
+is keyed to the binary's hash, so an unchanged binary publishes nothing new.
+
 ## rotator-cog's tokens
 
 rotator-cog writes new secret values into Doppler, so its worker holds two

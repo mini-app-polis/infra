@@ -22,3 +22,6 @@ tfplan
 # scripts/doppler_split.py snapshot: hashes of resolved secret values, kept
 # on the workstation only.
 doppler-snapshot.json
+
+# scripts/fetch_fpcalc.py output, zipped into the fpcalc layer (layers.tf).
+build/

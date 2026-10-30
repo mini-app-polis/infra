@@ -26,6 +26,17 @@ output "cogs" {
   }
 }
 
+output "deejay_fingerprint" {
+  description = "deejay-cog's fingerprint function: the repository variables its deploy step reads, and where to look when a job dead-letters."
+  value = {
+    AWS_DEPLOY_ROLE_ARN = module.deejay_fingerprint.deploy_role_arn
+    AWS_FUNCTION_NAME   = module.deejay_fingerprint.function_name
+    queue_url           = module.deejay_fingerprint.queue_url
+    dlq_url             = module.deejay_fingerprint.dlq_url
+    alerts_topic_arn    = module.deejay_fingerprint.alerts_topic_arn
+  }
+}
+
 output "watcher" {
   description = "watcher-cog's repository variables, and whether its schedule is on."
   value = {
@@ -39,18 +50,23 @@ output "watcher" {
 
 output "doppler_consumers" {
   description = "Per worker's own Doppler project: each name its code reads → the vault's name for the value. doppler/ lays out each project's configs and syncs from this."
+  # deejay-cog's two functions share its project, so their names merge.
   value = {
-    for m in [
-      module.evaluator,
-      module.deejay,
-      module.transcription,
-      module.wiki_curator,
-      module.task_manager,
-      module.task_groomer,
-      module.rotator,
-      module.watcher,
-    ] :
-    m.doppler_project => m.doppler_references
+    for project, references in {
+      for m in [
+        module.evaluator,
+        module.deejay,
+        module.deejay_fingerprint,
+        module.transcription,
+        module.wiki_curator,
+        module.task_manager,
+        module.task_groomer,
+        module.rotator,
+        module.watcher,
+      ] :
+      m.doppler_project => m.doppler_references...
+    } :
+    project => merge(references...)
   }
 }
 
