@@ -127,6 +127,10 @@ jobs:
       - name: fmt
         run: terraform fmt -check -recursive -diff
 
+      # layers.tf zips the fpcalc layer from build/, which is not committed.
+      - name: fetch fpcalc
+        run: python3 scripts/fetch_fpcalc.py
+
       - name: init
         run: terraform init
 
@@ -237,6 +241,10 @@ jobs:
         with:
           role-to-assume: ${{ vars.AWS_APPLY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+
+      # layers.tf zips the fpcalc layer from build/, which is not committed.
+      - name: fetch fpcalc
+        run: python3 scripts/fetch_fpcalc.py
 
       - name: init
         run: terraform init

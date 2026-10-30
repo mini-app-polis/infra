@@ -194,6 +194,26 @@ variable "own_queue_url_variable" {
   default     = null
 }
 
+variable "send_queues" {
+  description = <<-DESC
+    Other cogs' queues this worker hands jobs to, by the environment
+    variable that carries each queue's URL. The worker's role may
+    sqs:SendMessage to exactly these queues, and its environment holds
+    their URLs. Its own queue goes through own_queue_url_variable instead.
+  DESC
+  type = map(object({
+    url = string
+    arn = string
+  }))
+  default = {}
+}
+
+variable "layers" {
+  description = "Lambda layer version ARNs the function runs with: native binaries its package cannot carry. None by default."
+  type        = list(string)
+  default     = []
+}
+
 variable "schedules" {
   description = <<-DESC
     Jobs the cog runs on a clock, by name. Each puts its body on the cog's

@@ -174,6 +174,15 @@ data "aws_iam_policy_document" "worker" {
     }
   }
 
+  # Queues it hands jobs to (send_queues), and only those.
+  dynamic "statement" {
+    for_each = length(var.send_queues) > 0 ? [1] : []
+    content {
+      actions   = ["sqs:SendMessage"]
+      resources = [for q in values(var.send_queues) : q.arn]
+    }
+  }
+
   statement {
     actions   = ["logs:CreateLogStream", "logs:PutLogEvents"]
     resources = ["${aws_cloudwatch_log_group.worker.arn}:*"]
@@ -226,6 +235,7 @@ resource "aws_lambda_function" "worker" {
   runtime       = var.runtime
   handler       = var.handler
   architectures = [var.architecture]
+  layers        = var.layers
 
   filename         = data.archive_file.bootstrap.output_path
   source_code_hash = data.archive_file.bootstrap.output_base64sha256
@@ -247,6 +257,8 @@ resource "aws_lambda_function" "worker" {
       # Its own queue, for a cog that queues jobs for itself. The queue
       # does not depend on the function, so this is no cycle.
       var.own_queue_url_variable != null ? { (var.own_queue_url_variable) = aws_sqs_queue.jobs.url } : {},
+      # Queues it hands jobs to.
+      { for variable, queue in var.send_queues : variable => queue.url },
       {
         SSM_PREFIX              = local.ssm_prefix
         SSM_PARAMETERS          = jsonencode(local.ssm_parameters)

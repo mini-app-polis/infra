@@ -45,6 +45,13 @@ locals {
     },
   )
 
+  # deejay-cog deploys a second function, its fingerprint function, through
+  # a role of its own; until the root has applied it there is nothing to add.
+  fingerprint_deploy_variables = try({
+    AWS_FINGERPRINT_DEPLOY_ROLE_ARN = local.root.deejay_fingerprint.AWS_DEPLOY_ROLE_ARN
+    AWS_FINGERPRINT_FUNCTION_NAME   = local.root.deejay_fingerprint.AWS_FUNCTION_NAME
+  }, {})
+
   # Per sync: the repository, the GitHub environment if any, its secrets and
   # variables (name → vault source), and values from this repository.
   github_targets = merge(
@@ -57,7 +64,7 @@ locals {
           name => source if repo == "wiki-curator-cog"
         }
         variables = {}
-        literals  = variables
+        literals  = repo == "deejay-cog" ? merge(variables, local.fingerprint_deploy_variables) : variables
       }
     },
     {
