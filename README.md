@@ -291,9 +291,10 @@ aws ssm get-parameters-by-path --region us-east-1 --path /mini-app-polis/<reposi
 
 ## Splitting the vault
 
-The values come from `mini-app-polis-ecosystem` (`prd` and `dev`), the
-single vault the two projects replace. It stays, unreferenced, until it is
-retired. `scripts/doppler_split.py` copies its values into the two
+The values came from `mini-app-polis-ecosystem` (`prd` and `dev`), the
+single vault the two projects replaced. It has been deleted; `sort`, `copy`
+and `snapshot` read it and are kept as the record of how the split was made,
+and `verify` still checks every reference against a snapshot. `scripts/doppler_split.py` copies its values into the two
 projects, by the same rule `generate` writes for `doppler/` (above), and
 proves the move. None of its modes prints, logs or writes a value: they
 report names, and the snapshot holds hashes.

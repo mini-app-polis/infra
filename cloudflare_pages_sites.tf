@@ -4,11 +4,11 @@
 # Doppler project of their own, mini-app-polis-pages / prd, with a read-only
 # service token scoped to it (the GitHub secret DOPPLER_TOKEN_PAGES,
 # exported as DOPPLER_TOKEN). Each secret there is a reference to the value
-# in mini-app-polis-ecosystem, so a value is still edited in one place.
+# in mini-app-polis-settings, so a value is still edited in one place.
 #
 # Why a project of its own: a data source's result is written to state, the
-# whole map, not only the names used below. Pointed at the ecosystem's prd
-# config, it put every worker's secret in the state file. This project holds
+# whole map, not only the names used below. Pointed at a vault prd config,
+# it would put every value there in the state file. This project holds
 # only the public build values listed below, so that is all state can hold.
 # Adding a name below means adding its reference there first.
 #
@@ -169,7 +169,7 @@ resource "cloudflare_pages_project" "site" {
   lifecycle {
     precondition {
       condition     = alltrue([for n in local.cloudflare_pages_doppler_names : local.doppler[n] != ""])
-      error_message = "A Pages build value is missing or empty in Doppler (mini-app-polis-ecosystem / prd): ${join(", ", [for n in local.cloudflare_pages_doppler_names : n if local.doppler[n] == ""])}."
+      error_message = "A Pages build value is missing or empty in Doppler (mini-app-polis-pages / prd): ${join(", ", [for n in local.cloudflare_pages_doppler_names : n if local.doppler[n] == ""])}."
     }
   }
 
