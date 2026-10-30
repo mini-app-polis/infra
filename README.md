@@ -206,8 +206,10 @@ only one environment of one service changes from its code default.
 
 The Lambda workers and this root have projects that sync to Parameter
 Store. Each one's `prd` syncs to `/mini-app-polis/<repository>/prd/`; a
-worker's `dev` holds the same references into the vault's `dev`. This
-root's own project, `infra`, holds the alert address `account.tf` reads.
+worker's `dev` holds the same references into the vault's `dev`, plus
+any its local runs alone read (`local.worker_local_extras` in
+`doppler/main.tf`). This root's own project, `infra`, holds the alert
+address `account.tf` reads.
 
 Local runs use the same projects: each repository's `doppler.yaml` pins
 its own project's `dev`, so `doppler run` sees what production sees, under
@@ -289,9 +291,10 @@ aws ssm get-parameters-by-path --region us-east-1 --path /mini-app-polis/<reposi
 
 ## Splitting the vault
 
-The values come from `mini-app-polis-ecosystem` (`prd` and `dev`), the
-single vault the two projects replace. It stays, unreferenced, until it is
-retired. `scripts/doppler_split.py` copies its values into the two
+The values came from `mini-app-polis-ecosystem` (`prd` and `dev`), the
+single vault the two projects replaced. It has been deleted; `sort`, `copy`
+and `snapshot` read it and are kept as the record of how the split was made,
+and `verify` still checks every reference against a snapshot. `scripts/doppler_split.py` copies its values into the two
 projects, by the same rule `generate` writes for `doppler/` (above), and
 proves the move. None of its modes prints, logs or writes a value: they
 report names, and the snapshot holds hashes.

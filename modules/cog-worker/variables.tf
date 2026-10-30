@@ -112,8 +112,8 @@ variable "environment" {
 
 variable "ssm_parameters" {
   description = <<-DESC
-    Environment variable name → the name of its value in the vault,
-    mini-app-polis-ecosystem / prd. The worker's own Doppler config holds a
+    Environment variable name → the name of its value in the vault
+    (mini-app-polis-secrets or mini-app-polis-settings, prd). The worker's own Doppler config holds a
     reference to that value under the environment variable's name, synced to
     /mini-app-polis/<repository>/prd/. The worker loads these at cold start
     (mini_app_polis.ssm_secrets) and its role may read these and nothing

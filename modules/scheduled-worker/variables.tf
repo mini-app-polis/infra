@@ -123,7 +123,7 @@ variable "error_alarm_threshold" {
 # ── Secrets, by name ─────────────────────────────────────────────────────
 
 variable "ssm_parameters" {
-  description = "Environment variable name → the name of its value in the vault, mini-app-polis-ecosystem / prd. The worker's own Doppler config references it under the variable's name, synced to /mini-app-polis/<repository>/prd/. Loaded at cold start; a missing one fails it."
+  description = "Environment variable name → the name of its value in the vault (mini-app-polis-secrets or mini-app-polis-settings, prd). The worker's own Doppler config references it under the variable's name, synced to /mini-app-polis/<repository>/prd/. Loaded at cold start; a missing one fails it."
   type        = map(string)
 }
 

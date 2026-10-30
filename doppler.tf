@@ -10,10 +10,11 @@
 # own Doppler read is a separate, public-only project; see
 # cloudflare_pages_sites.tf).
 #
-# The vault, mini-app-polis-ecosystem, is shared, so a value that differs per
-# worker carries the worker in its name there (DEEJAY_COG_API_KEY), so one
-# name never means two things (ecosystem-standards CD-011). The dev configs
-# are not synced to AWS: local runs use them through `doppler run`.
+# The vault, mini-app-polis-secrets and mini-app-polis-settings, is shared,
+# so a value that differs per worker carries the worker in its name there
+# (DEEJAY_COG_API_KEY), so one name never means two things
+# (ecosystem-standards CD-011). The dev configs are not synced to AWS: local
+# runs use them through `doppler run`.
 
 locals {
   # Everything the fleet's workers read lives under this prefix, but for

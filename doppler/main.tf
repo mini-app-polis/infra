@@ -39,6 +39,17 @@ locals {
     KAIANO_API_BASE_URL_DEV = "KAIANO_API_BASE_URL_DEV"
   }
 
+  # What one worker's dev config adds for its local runs alone: names its
+  # local entry point reads that the function never does, so they are in
+  # neither its SSM names nor its prd config.
+  worker_local_extras = {
+    # `python -m task_groomer_cog` reads the task, or the board, from Asana.
+    "task-groomer-cog" = {
+      ASANA_ACCESS_TOKEN     = "ASANA_ACCESS_TOKEN"
+      ASANA_INBOX_PROJECT_ID = "ASANA_INBOX_PROJECT_ID"
+    }
+  }
+
   # What a worker's prd config adds for a local command against production
   # (`doppler run --config prd`): the function's own environment again. The
   # function never loads these from Parameter Store; it has them already.
@@ -55,7 +66,7 @@ locals {
       for project, names in local.workers : project => {
         description = "${project}'s Lambda worker"
         prd         = merge(names, local.worker_prd_extras)
-        dev         = merge(names, local.worker_dev_extras)
+        dev         = merge(names, local.worker_dev_extras, lookup(local.worker_local_extras, project, {}))
       }
     },
     {
