@@ -257,6 +257,14 @@ vault config the reference names (printed as a `create` line; written only
 with `--apply`), then writes the reference. A name already in the vault is
 never overwritten or emptied, and `--prune` is unaffected.
 
+A Railway service reads its Doppler config when it starts, so a name that
+`--apply` adds to its config (a new reference, or a new name in the vault it
+references) is not seen until the service is redeployed. Redeploy it by hand
+afterwards, from the service's page in the Railway dashboard (Deployments >
+Redeploy) or with `railway redeploy --service <name>` in the right
+environment. Do this for each environment (`prd`, `dev`) whose config
+changed.
+
 Optional settings follow one convention. When a worker declares an optional
 setting (a name in its `ssm_optional_parameters`), the name is added to the
 vault empty, which `--create-missing` does. It is set later by editing the
