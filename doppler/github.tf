@@ -52,6 +52,13 @@ locals {
     AWS_FINGERPRINT_FUNCTION_NAME   = local.root.deejay_fingerprint.AWS_FUNCTION_NAME
   }, {})
 
+  # A workflow's own machine key, synced to the one repository whose
+  # workflow presents it (repository → secret name).
+  workflow_machine_keys = {
+    "task-manager-cog" = "TASK_MANAGER_SWEEP_API_KEY"
+    "wiki-curator-cog" = "WIKI_CURATOR_DEPLOY_API_KEY"
+  }
+
   # Per sync: the repository, the GitHub environment if any, its secrets and
   # variables (name → vault source), and values from this repository.
   github_targets = merge(
@@ -60,8 +67,8 @@ locals {
         repo        = repo
         environment = null
         secrets = {
-          for name, source in { WIKI_CURATOR_DEPLOY_API_KEY = "prd.WIKI_CURATOR_DEPLOY_API_KEY" } :
-          name => source if repo == "wiki-curator-cog"
+          for owner, name in local.workflow_machine_keys : name => "prd.${name}"
+          if owner == repo
         }
         variables = {}
         literals  = repo == "deejay-cog" ? merge(variables, local.fingerprint_deploy_variables) : variables
