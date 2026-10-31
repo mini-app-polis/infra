@@ -14,8 +14,9 @@
 locals {
   spotify = "spotify"
 
-  # Names whose value is in spotify / prd rather than the vault.
-  spotify_names = toset(["SPOTIPY_REFRESH_TOKEN", "SPOTIPY_REFRESH_TOKEN_ISSUED_AT"])
+  # The names whose value is in spotify / prd rather than the vault are
+  # local.spotify_names, in spotify_names.tf.json: JSON so the root can read
+  # them too, and leave them out of every Lambda's SETTINGS_ALLOWLIST.
 }
 
 resource "doppler_project" "spotify" {

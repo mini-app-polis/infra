@@ -62,7 +62,7 @@ variable "memory_mb" {
 }
 
 variable "environment" {
-  description = "Non-secret configuration beyond ENVIRONMENT, KAIANO_API_BASE_URL and the SSM_* names. Lands in state and in every plan."
+  description = "Non-secret configuration beyond ENVIRONMENT, KAIANO_API_BASE_URL, the SSM_* names and SETTINGS_ALLOWLIST. Lands in state and in every plan."
   type        = map(string)
   default     = {}
 }
@@ -131,6 +131,18 @@ variable "ssm_optional_parameters" {
   description = "As ssm_parameters, for settings the code has its own default for."
   type        = map(string)
   default     = {}
+}
+
+variable "non_settings_names" {
+  description = <<-DESC
+    Vault names whose value is not in mini-app-polis-settings: the secrets,
+    in mini-app-polis-secrets (doppler/vault_secret_names.tf.json), and
+    Spotify's (doppler/spotify_names.tf.json). Every other vault name an
+    ssm_parameters or ssm_optional_parameters entry names is a setting, and
+    its environment variable name is in SETTINGS_ALLOWLIST. No default, so
+    no worker can leave the secrets out and list them as settings.
+  DESC
+  type        = set(string)
 }
 
 variable "log_retention_days" {

@@ -5,6 +5,18 @@
 # handler, architecture and the runtime must match the cog's deploy job in
 # its ci.yml. Secrets are listed by name only; their values are in Doppler.
 
+locals {
+  # Vault names whose value is not a setting: the secrets doppler/ references
+  # in mini-app-polis-secrets, and Spotify's, in their own project. Read from
+  # the files doppler/ sorts its references by, so every worker's
+  # SETTINGS_ALLOWLIST names exactly what its Doppler config references in
+  # mini-app-polis-settings.
+  non_settings_names = toset(concat(
+    jsondecode(file("${path.module}/doppler/vault_secret_names.tf.json")).locals.vault_secret_names,
+    jsondecode(file("${path.module}/doppler/spotify_names.tf.json")).locals.spotify_names,
+  ))
+}
+
 module "evaluator" {
   source = "./modules/cog-worker"
 
@@ -13,6 +25,7 @@ module "evaluator" {
   github_oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
   alert_email              = local.alert_email
   api_base_url             = var.kaiano_api_base_url
+  non_settings_names       = local.non_settings_names
 
   handler         = "evaluator_cog.adapters.lambda_worker.lambda_handler"
   architecture    = "arm64"
@@ -50,6 +63,7 @@ module "deejay" {
   github_oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
   alert_email              = local.alert_email
   api_base_url             = var.kaiano_api_base_url
+  non_settings_names       = local.non_settings_names
 
   # x86_64: cryptography, cffi and rpds-py ship compiled wheels the deploy
   # builds for x86_64-manylinux_2_17.
@@ -113,6 +127,7 @@ module "deejay_fingerprint" {
   github_oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
   alert_email              = local.alert_email
   api_base_url             = var.kaiano_api_base_url
+  non_settings_names       = local.non_settings_names
 
   # The handler module is deejay-cog's to build. x86_64, like the
   # deejay worker, and the only architecture chromaprint ships fpcalc for.
@@ -150,6 +165,7 @@ module "transcription" {
   github_oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
   alert_email              = local.alert_email
   api_base_url             = var.kaiano_api_base_url
+  non_settings_names       = local.non_settings_names
 
   handler      = "transcription_cog.worker.lambda_handler"
   architecture = "arm64"
@@ -203,6 +219,7 @@ module "wiki_curator" {
   github_oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
   alert_email              = local.alert_email
   api_base_url             = var.kaiano_api_base_url
+  non_settings_names       = local.non_settings_names
 
   handler      = "wiki_curator_cog.worker.lambda_handler"
   architecture = "arm64"
@@ -254,6 +271,7 @@ module "task_manager" {
   github_oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
   alert_email              = local.alert_email
   api_base_url             = var.kaiano_api_base_url
+  non_settings_names       = local.non_settings_names
 
   # Created after GitHub made immutable OIDC subjects the default, which a
   # repository cannot turn off: its workflows present the org's and the
@@ -343,6 +361,7 @@ module "watcher" {
   github_oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
   alert_email              = local.alert_email
   api_base_url             = var.kaiano_api_base_url
+  non_settings_names       = local.non_settings_names
 
   handler         = "watcher_cog.handler.lambda_handler"
   architecture    = "arm64"
@@ -405,6 +424,7 @@ module "task_groomer" {
   github_oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
   alert_email              = local.alert_email
   api_base_url             = var.kaiano_api_base_url
+  non_settings_names       = local.non_settings_names
 
   # Created with GitHub's immutable OIDC subjects, as task-manager-cog was.
   github_oidc_subject = "repo:mini-app-polis@270520182/task-groomer-cog@1428880997"
@@ -463,6 +483,7 @@ module "rotator" {
   github_oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
   alert_email              = local.alert_email
   api_base_url             = var.kaiano_api_base_url
+  non_settings_names       = local.non_settings_names
 
   # Created with GitHub's immutable OIDC subjects, as task-manager-cog was.
   github_oidc_subject = "repo:mini-app-polis@270520182/rotator-cog@1433517907"

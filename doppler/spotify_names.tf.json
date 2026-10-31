@@ -1,0 +1,9 @@
+{
+  "//": "Names whose value is in spotify / prd rather than the vault (spotify.tf). JSON so the root reads the same list (cogs.tf).",
+  "locals": {
+    "spotify_names": [
+      "SPOTIPY_REFRESH_TOKEN",
+      "SPOTIPY_REFRESH_TOKEN_ISSUED_AT"
+    ]
+  }
+}
