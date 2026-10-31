@@ -121,6 +121,11 @@ output "rotator_railway_token_parameters" {
   value       = local.rotator_railway_token_parameters
 }
 
+output "pages_subdomains" {
+  description = "Per Pages site: its pages.dev hostname. A branch's deploys are served at <branch>.<hostname>."
+  value       = { for name, project in cloudflare_pages_project.site : name => project.subdomain }
+}
+
 output "ci_roles" {
   description = "Repository variables for this repo's workflow: AWS_PLAN_ROLE_ARN and AWS_APPLY_ROLE_ARN."
   value = {
