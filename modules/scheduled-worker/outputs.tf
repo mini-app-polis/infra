@@ -27,3 +27,8 @@ output "doppler_references" {
   description = "Each name the code reads → the vault's name for its value: what the worker's own Doppler config references."
   value       = merge(var.ssm_parameters, var.ssm_optional_parameters)
 }
+
+output "settings_allowlist" {
+  description = "The worker's SETTINGS_ALLOWLIST: the comma-separated, sorted names it loads whose value is in mini-app-polis-settings. Names only."
+  value       = local.settings_allowlist
+}

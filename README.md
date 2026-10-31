@@ -97,8 +97,9 @@ import {
 ## Adding a cog
 
 Add a `module` block to `cogs.tf`, list its secrets by name (their values go
-in Doppler), add it to the `cogs` output and `cog_max_in_flight_seconds` in
-`outputs.tf`, apply, confirm the alert subscription email, and set the three
+in Doppler), pass it `non_settings_names = local.non_settings_names` (see
+"Doppler layout"), add it to the `cogs` output and
+`cog_max_in_flight_seconds` in `outputs.tf`, apply, confirm the alert subscription email, and set the three
 repository variables from `terraform output cogs` in the cog's repository.
 
 ## Lambda layers
@@ -210,6 +211,24 @@ worker's `dev` holds the same references into the vault's `dev`, plus
 any its local runs alone read (`local.worker_local_extras` in
 `doppler/main.tf`). This root's own project, `infra`, holds the alert
 address `account.tf` reads.
+
+Every Lambda worker and Railway service also gets `SETTINGS_ALLOWLIST`: the
+comma-separated, sorted names of what it reads from
+`mini-app-polis-settings`, so a service can log a setting's value only when
+its name is listed. It holds names only, never a value, and never a name
+from `mini-app-polis-secrets`. It is derived from the references, never
+kept by hand. A worker's is in its function's environment: its module
+names each of its `ssm_parameters` and `ssm_optional_parameters` whose
+vault name is not in `local.non_settings_names` (`cogs.tf`), which reads
+the secret names from `doppler/vault_secret_names.tf.json` and Spotify's
+from `doppler/spotify_names.tf.json`, the same files `doppler/` sorts its
+references by. A Railway service's is a value of its own in each of its
+Doppler configs, written by Terraform from that config's references
+(`doppler/railway.tf`); a db-ops cron's branch config adds what it inherits
+from its root. Like any change to a Railway config, a new list reaches the
+service when it is redeployed (below). `terraform test` checks the
+modules' derivation and `terraform -chdir=doppler test` the Railway
+configs', against mocked providers.
 
 Local runs use the same projects: each repository's `doppler.yaml` pins
 its own project's `dev`, so `doppler run` sees what production sees, under

@@ -31,6 +31,16 @@ locals {
     for p in distinct(values(merge(local.ssm_parameters, local.ssm_optional_parameters))) :
     "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_prefix}${p}"
   ]
+
+  # The names whose vault value is in mini-app-polis-settings, sorted and
+  # comma-separated: every name loaded at cold start whose vault name is not
+  # in non_settings_names. Names only, never a value, and never a name that
+  # references mini-app-polis-secrets. The worker logs a setting's value
+  # only when its name is here.
+  settings_allowlist = join(",", sort([
+    for name, source in merge(var.ssm_parameters, var.ssm_optional_parameters) : name
+    if !contains(var.non_settings_names, source)
+  ]))
 }
 
 # ── Queue ────────────────────────────────────────────────────────────────
@@ -245,8 +255,8 @@ resource "aws_lambda_function" "worker" {
   reserved_concurrent_executions = var.reserved_concurrency
 
   # Configuration only. The SSM_* entries name the parameters the worker
-  # loads itself at cold start; no secret value is here, in state or in a
-  # plan.
+  # loads itself at cold start, and SETTINGS_ALLOWLIST which of them are
+  # settings; no secret value is here, in state or in a plan.
   environment {
     variables = merge(
       {
@@ -263,6 +273,7 @@ resource "aws_lambda_function" "worker" {
         SSM_PREFIX              = local.ssm_prefix
         SSM_PARAMETERS          = jsonencode(local.ssm_parameters)
         SSM_OPTIONAL_PARAMETERS = jsonencode(local.ssm_optional_parameters)
+        SETTINGS_ALLOWLIST      = local.settings_allowlist
       },
     )
   }

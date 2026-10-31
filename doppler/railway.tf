@@ -193,3 +193,36 @@ locals {
     ]
   ])
 }
+
+# Each Railway config's SETTINGS_ALLOWLIST: the comma-separated, sorted
+# names it references in mini-app-polis-settings, derived from the
+# references above. A db-ops cron's branch config adds its root's, which
+# it inherits. Names only, so Terraform keeps it: it is not a secret, and
+# the service logs a setting's value only when its name is here.
+locals {
+  railway_refs = { for set in local.railway_references : "${set.project}/${set.config}" => set.refs }
+
+  railway_settings_allowlists = {
+    for key, refs in local.railway_refs : key => join(",", sort([
+      for name, held in merge(lookup(local.railway_refs, split("_", key)[0], {}), refs) : name
+      if startswith(held.ref, "$${${local.vault_settings}.")
+    ]))
+  }
+}
+
+resource "doppler_secret" "settings_allowlist" {
+  for_each = local.railway_settings_allowlists
+
+  project    = local.project_names[split("/", each.key)[0]]
+  config     = split("/", each.key)[1]
+  name       = "SETTINGS_ALLOWLIST"
+  value      = each.value
+  visibility = "unmasked"
+
+  depends_on = [doppler_environment.railway, doppler_config.db_ops_cron]
+}
+
+output "settings_allowlists" {
+  description = "Per Railway project/config: its SETTINGS_ALLOWLIST, the names it references in mini-app-polis-settings. Names only."
+  value       = local.railway_settings_allowlists
+}
