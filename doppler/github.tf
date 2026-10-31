@@ -52,6 +52,12 @@ locals {
     AWS_FINGERPRINT_FUNCTION_NAME   = local.root.deejay_fingerprint.AWS_FUNCTION_NAME
   }, {})
 
+  # The dev branch URL of a Pages site, where its workflows test it. Until
+  # the root has applied its pages_subdomains output there is nothing to add.
+  pages_dev_urls = try({
+    for name, host in local.root.pages_subdomains : name => "https://dev.${host}"
+  }, {})
+
   # A workflow's own machine key, synced to the one repository whose
   # workflow presents it (repository → secret name).
   workflow_machine_keys = {
@@ -112,10 +118,12 @@ locals {
         environment = null
         secrets     = { CONTRACT_CLERK_SECRET_KEY = "dev.DEEJAYTOOLS_CLERK_SECRET_KEY" }
         variables = {
-          CONTRACT_API_URL = "prd.DEEJAYTOOLS_API_DEV"
-          CONTRACT_USER_ID = "prd.CONTRACT_USER_ID"
+          API_URL_DEVELOPMENT = "prd.DEEJAYTOOLS_API_DEV"
+          API_URL_PRODUCTION  = "prd.DEEJAYTOOLS_API"
+          CONTRACT_API_URL    = "prd.DEEJAYTOOLS_API_DEV"
+          CONTRACT_USER_ID    = "prd.CONTRACT_USER_ID"
         }
-        literals = {}
+        literals = try({ SITE_URL_DEVELOPMENT = local.pages_dev_urls["deejaytools-com"] }, {})
       }
       "ecosystem-standards" = {
         repo        = "ecosystem-standards"
