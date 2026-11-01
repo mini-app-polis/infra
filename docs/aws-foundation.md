@@ -33,7 +33,7 @@ every apply after a deploy would silently roll it back to the bootstrap
 placeholder it was created with.
 
 **A zip, not a container image.** Measured rather than assumed: 25.8 MB zipped
-against a 50 MB limit once `prefect` is dropped. No ECR, no build-and-push, no
+against a 50 MB limit. No ECR, no build-and-push, no
 "which image is actually deployed".
 
 **No access key in Terraform.** The producer's IAM user and its send-only policy
