@@ -378,7 +378,7 @@ module "watcher" {
   # check, which only catches the schedule stopping; the error alarm below
   # is what notices a single folder failing.
   schedule_targets = {
-    for name in ["dj-sets", "live-history", "wcs-notes", "voice-notes"] :
+    for name in ["dj-sets", "live-history", "wcs-notes", "voice-notes", "music-uploads"] :
     name => { watcher = name }
   }
 
@@ -400,6 +400,7 @@ module "watcher" {
     GOOGLE_CREDENTIALS_JSON            = "GOOGLE_CREDENTIALS_JSON"
     GOOGLE_DRIVE_VOICE_INBOX_FOLDER_ID = "GOOGLE_DRIVE_VOICE_INBOX_FOLDER_ID"
     LIVE_HISTORY_FOLDER_ID             = "LIVE_HISTORY_FOLDER_ID"
+    MUSIC_UPLOAD_SOURCE_FOLDER_ID      = "MUSIC_UPLOAD_SOURCE_FOLDER_ID"
     # The silence detector: the one alert that fires when nothing is
     # invoking the function at all. Required, not optional.
     HEALTHCHECKS_URL_WATCHER = "HEALTHCHECKS_URL_WATCHER"
@@ -409,10 +410,6 @@ module "watcher" {
   ssm_optional_parameters = {
     LOGGING_LEVEL   = "LOGGING_LEVEL"
     SENTRY_DSN_COGS = "SENTRY_DSN_COGS"
-    # The music upload folder, for the music-uploads watcher. Optional until
-    # that watcher ships and the folder id is in the vault: a required name
-    # with no value fails every watcher's cold start.
-    MUSIC_UPLOAD_SOURCE_FOLDER_ID = "MUSIC_UPLOAD_SOURCE_FOLDER_ID"
   }
 }
 
