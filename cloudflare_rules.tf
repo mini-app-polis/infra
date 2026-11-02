@@ -78,7 +78,7 @@ resource "cloudflare_ruleset" "deejaytools_com_cache" {
       # rate-limit rule.
       ref         = "deejaytools-public-reads"
       description = "api-public-reads"
-      expression  = "(http.host in {\"api.deejaytools.com\" \"api-dev.deejaytools.com\"}) and http.request.method eq \"GET\" and len(http.request.headers[\"authorization\"]) eq 0 and (http.request.uri.path eq \"/v1/sessions\" or (starts_with(http.request.uri.path, \"/v1/sessions/\") and not substring(http.request.uri.path, 13) contains \"/\") or (starts_with(http.request.uri.path, \"/v1/queue/\") and (ends_with(http.request.uri.path, \"/active\") or ends_with(http.request.uri.path, \"/waiting\"))))"
+      expression  = "(http.host in {\"api.deejaytools.com\" \"api-dev.deejaytools.com\"}) and http.request.method eq \"GET\" and not any(lower(http.request.headers.names[*])[*] eq \"authorization\") and (http.request.uri.path eq \"/v1/sessions\" or (starts_with(http.request.uri.path, \"/v1/sessions/\") and not substring(http.request.uri.path, 13) contains \"/\") or (starts_with(http.request.uri.path, \"/v1/queue/\") and (ends_with(http.request.uri.path, \"/active\") or ends_with(http.request.uri.path, \"/waiting\"))))"
       action      = "set_cache_settings"
       action_parameters = {
         cache = true
