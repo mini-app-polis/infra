@@ -5,7 +5,7 @@
 # wiping a volume or losing the project takes the backups with it. This
 # bucket is the copy for when Railway itself is the problem, and the exit
 # path if the databases ever leave. db-backup (mini-app-polis/db-ops) writes
-# a pg_dump of each database here nightly; db-drill restores from it.
+# a pg_dump of each database here every four hours; db-drill restores from it.
 #
 # Object keys, which the lifecycle below depends on:
 #
