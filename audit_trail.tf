@@ -11,7 +11,7 @@
 #     dump, with the caller, its source IP and the object key.
 #
 # Data events cost per event, so they are scoped to the one bucket whose
-# reads matter. db-backup writes a few objects a night and db-drill reads
+# reads matter. db-backup writes about a dozen objects a day and db-drill reads
 # one a month; the volume is a rounding error.
 #
 # The logs land in their own bucket, below. Reading them: README.md,
