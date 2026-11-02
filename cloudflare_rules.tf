@@ -1,10 +1,12 @@
 # Every custom ruleset in the account: per-zone WAF custom rules, rate
-# limiting and single redirects, and the account's bulk redirects with the
-# lists they read. Cloudflare's managed rulesets (Free managed, DDoS,
-# normalization) are on every zone by default and are not managed here.
+# limiting, cache rules and single redirects, and the account's bulk
+# redirects with the lists they read. Cloudflare's managed rulesets (Free
+# managed, DDoS, normalization) are on every zone by default and are not
+# managed here.
 #
-# Free plan limits: 5 custom rules and 1 rate-limiting rule per zone, and
-# the rate-limit period and mitigation timeout are fixed at 10 seconds.
+# Free plan limits: 5 custom rules, 1 rate-limiting rule and 10 cache rules
+# per zone, and the rate-limit period and mitigation timeout are fixed at 10
+# seconds.
 
 resource "cloudflare_ruleset" "deejaytools_com_rate_limit" {
   zone_id = cloudflare_zone.this["deejaytools.com"].id
@@ -49,6 +51,45 @@ resource "cloudflare_ruleset" "deejaytools_com_waf_custom" {
       expression  = "   (http.host eq \"api.deejaytools.com\") and ((lower(url_decode(http.request.uri.path)) contains \"/.\" and not starts_with(http.request.uri.path, \"/.well-known/\")) or ends_with(lower(url_decode(http.request.uri.path)), \".php\") or lower(url_decode(http.request.uri.path)) contains \"wp-\" or lower(url_decode(http.request.uri.path)) contains \"tfstate\" or starts_with(http.request.uri.path, \"//\"))"
       action      = "block"
       enabled     = true
+    },
+  ]
+}
+
+resource "cloudflare_ruleset" "deejaytools_com_cache" {
+  zone_id = cloudflare_zone.this["deejaytools.com"].id
+  name    = "default"
+  kind    = "zone"
+  phase   = "http_request_cache_settings"
+
+  rules = [
+    {
+      # The API's public reads, so a venue's polling phones are answered at
+      # the edge: the session list and one session, and a session's active
+      # and waiting queues. Cloudflare caches no JSON by default; this makes
+      # these paths eligible and keeps the origin's Cache-Control (an
+      # anonymous answer is public with s-maxage, anything else private,
+      # no-store). Paths that send no Cache-Control are left out, so the
+      # edge never applies its own default TTL to them. A request with an
+      # Authorization header always goes to the origin: signed-in and staff
+      # reads are personal or must be fresh. The default cache key keeps the
+      # request's Origin header, so each site origin gets its own CORS
+      # headers. Covers api-dev too so dev mirrors prod. The Free plan has no
+      # regex, so the {id} paths are matched by prefix and suffix, as in the
+      # rate-limit rule.
+      ref         = "deejaytools-public-reads"
+      description = "api-public-reads"
+      expression  = "(http.host in {\"api.deejaytools.com\" \"api-dev.deejaytools.com\"}) and http.request.method eq \"GET\" and len(http.request.headers[\"authorization\"]) eq 0 and (http.request.uri.path eq \"/v1/sessions\" or (starts_with(http.request.uri.path, \"/v1/sessions/\") and not substring(http.request.uri.path, 13) contains \"/\") or (starts_with(http.request.uri.path, \"/v1/queue/\") and (ends_with(http.request.uri.path, \"/active\") or ends_with(http.request.uri.path, \"/waiting\"))))"
+      action      = "set_cache_settings"
+      action_parameters = {
+        cache = true
+        edge_ttl = {
+          mode = "respect_origin"
+        }
+        browser_ttl = {
+          mode = "respect_origin"
+        }
+      }
+      enabled = true
     },
   ]
 }
