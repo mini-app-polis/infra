@@ -16,16 +16,20 @@ resource "cloudflare_ruleset" "deejaytools_com_rate_limit" {
 
   rules = [
     {
-      # The Free plan's one rate-limiting rule keys only on the IP, so the
-      # public read paths are left out of it: a venue's phones share one IP and
-      # poll these at far more than 5 requests a second. The API enforces its
-      # own limit on them. Everything else keeps 50 requests per 10 seconds.
-      # Covers api-dev too so dev mirrors prod. The Free plan has no regex, so
-      # the {id} paths are matched by prefix and suffix (the sessions path by
+      # The Free plan's one rate-limiting rule keys only on the IP, and a
+      # venue's phones share one IP, so two kinds of request are left out of
+      # it. The public reads, which the phones poll at far more than 5 requests
+      # a second and the edge and the API cache. And any request with an
+      # Authorization header: the API limits a signed-in caller per verified
+      # user, and a token that fails verification per address, so a forged
+      # header only gets past this rule, not the API's limit. Everything else
+      # (anonymous writes and reads) keeps 50 requests per 10 seconds. Covers
+      # api-dev too so dev mirrors prod. The Free plan has no regex, so the
+      # {id} paths are matched by prefix and suffix (the sessions path by
       # prefix with no further "/").
       ref         = "66611518ffd94b8e88fde6682d6bd480"
       description = "api-per-ip-burst"
-      expression  = "(http.host in {\"api.deejaytools.com\" \"api-dev.deejaytools.com\"}) and not (http.request.method eq \"GET\" and (http.request.uri.path eq \"/v1/divisions\" or http.request.uri.path eq \"/version\" or (starts_with(http.request.uri.path, \"/v1/queue/\") and (ends_with(http.request.uri.path, \"/active\") or ends_with(http.request.uri.path, \"/waiting\"))) or (starts_with(http.request.uri.path, \"/v1/sessions/\") and not substring(http.request.uri.path, 13) contains \"/\")))"
+      expression  = "(http.host in {\"api.deejaytools.com\" \"api-dev.deejaytools.com\"}) and not any(lower(http.request.headers.names[*])[*] eq \"authorization\") and not (http.request.method eq \"GET\" and (http.request.uri.path eq \"/v1/divisions\" or http.request.uri.path eq \"/version\" or http.request.uri.path eq \"/v1/sessions\" or (starts_with(http.request.uri.path, \"/v1/queue/\") and (ends_with(http.request.uri.path, \"/active\") or ends_with(http.request.uri.path, \"/waiting\"))) or (starts_with(http.request.uri.path, \"/v1/sessions/\") and not substring(http.request.uri.path, 13) contains \"/\")))"
       action      = "block"
       ratelimit = {
         characteristics     = ["ip.src", "cf.colo.id"]
