@@ -400,7 +400,6 @@ module "watcher" {
     GOOGLE_CREDENTIALS_JSON            = "GOOGLE_CREDENTIALS_JSON"
     GOOGLE_DRIVE_VOICE_INBOX_FOLDER_ID = "GOOGLE_DRIVE_VOICE_INBOX_FOLDER_ID"
     LIVE_HISTORY_FOLDER_ID             = "LIVE_HISTORY_FOLDER_ID"
-    MUSIC_UPLOAD_SOURCE_FOLDER_ID      = "MUSIC_UPLOAD_SOURCE_FOLDER_ID"
     # The silence detector: the one alert that fires when nothing is
     # invoking the function at all. Required, not optional.
     HEALTHCHECKS_URL_WATCHER = "HEALTHCHECKS_URL_WATCHER"
@@ -410,6 +409,10 @@ module "watcher" {
   ssm_optional_parameters = {
     LOGGING_LEVEL   = "LOGGING_LEVEL"
     SENTRY_DSN_COGS = "SENTRY_DSN_COGS"
+    # The music upload folder, for the music-uploads watcher. Optional: a
+    # required name with no value fails every watcher's cold start, while
+    # watcher-cog skips the music-uploads tick when this is unset or empty.
+    MUSIC_UPLOAD_SOURCE_FOLDER_ID = "MUSIC_UPLOAD_SOURCE_FOLDER_ID"
   }
 }
 
