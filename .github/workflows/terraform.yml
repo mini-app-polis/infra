@@ -137,10 +137,23 @@ jobs:
       - name: validate
         run: terraform validate
 
+      # An hour-long installation token of the infra-read App, for the
+      # GitHub provider: it can read every repository's and the
+      # organisation's administration settings and change nothing.
+      - name: GitHub token (read)
+        id: github-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.INFRA_READ_APP_CLIENT_ID }}
+          private-key: ${{ secrets.INFRA_READ_APP_PRIVATE_KEY }}
+          owner: mini-app-polis
+
       # -lock=false: a plan changes nothing, and the plan role cannot write
       # the lock file. -detailed-exitcode: 0 no changes, 2 changes, 1 error.
       - name: plan
         id: plan
+        env:
+          GITHUB_TOKEN: ${{ steps.github-token.outputs.token }}
         run: |
           set +e
           terraform plan -lock=false -no-color -detailed-exitcode -out tfplan > plan.txt
@@ -220,8 +233,8 @@ jobs:
     concurrency:
       group: terraform-apply
       cancel-in-progress: false
-    # Edit token, held as a `production` environment secret so no other job
-    # can read it.
+    # Edit token and the infra-write App's credentials, held as `production`
+    # environment secrets so no other job can read them.
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PAGES }}
@@ -249,12 +262,24 @@ jobs:
       - name: init
         run: terraform init
 
+      # An hour-long installation token of the infra-write App, for the
+      # GitHub provider. Its credentials are `production` environment
+      # secrets, so only this job can mint it.
+      - name: GitHub token (write)
+        id: github-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.INFRA_WRITE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.INFRA_WRITE_APP_PRIVATE_KEY }}
+          owner: mini-app-polis
+
       # Planned again under the lock rather than applying the plan job's
       # file: the file never leaves that job (see the header). If anything
       # changed since that plan, this one shows it in the log.
       - name: apply
         env:
           GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ steps.github-token.outputs.token }}
         run: |
           terraform plan -no-color -out tfplan
           # The same guard, on the plan actually applied — main's can differ

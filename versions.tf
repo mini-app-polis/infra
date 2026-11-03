@@ -21,6 +21,10 @@ terraform {
       source  = "DopplerHQ/doppler"
       version = "~> 1.0"
     }
+    github = {
+      source  = "integrations/github"
+      version = "~> 6.0"
+    }
   }
 }
 
@@ -45,3 +49,11 @@ provider "cloudflare" {}
 # service token scoped to mini-app-polis-pages / prd, the config that holds
 # only the Pages sites' public build values (see cloudflare_pages_sites.tf).
 provider "doppler" {}
+
+# The token comes from GITHUB_TOKEN in the environment, never from
+# configuration: an installation token of the infra-read GitHub App in the
+# plan job, of the infra-write App in the apply job (see
+# .github/workflows/terraform.yml and the README's GitHub section).
+provider "github" {
+  owner = "mini-app-polis"
+}
