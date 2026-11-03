@@ -109,6 +109,28 @@ variable "schedule_targets" {
   }
 }
 
+variable "cron_jobs" {
+  description = <<-EOT
+    Invocations on their own schedule, beside the tick: a nightly job, say.
+    Each entry gets its own rule, invoking the function with its event at
+    its schedule_expression (an EventBridge cron() or rate(), in UTC). The
+    enabled switch turns these off with the tick.
+  EOT
+  type = map(object({
+    schedule_expression = string
+    event               = map(string)
+  }))
+  default = {}
+
+  validation {
+    condition = alltrue([
+      for job in values(var.cron_jobs) :
+      can(regex("^(cron|rate)\\(.+\\)$", job.schedule_expression))
+    ])
+    error_message = "Each cron_jobs schedule_expression is cron(...) or rate(...)."
+  }
+}
+
 variable "enabled" {
   description = "Whether the schedule fires. Off until cutover: the function can be deployed and invoked by hand while the service it replaces still runs."
   type        = bool
