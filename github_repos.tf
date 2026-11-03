@@ -6,9 +6,9 @@
 # comes with its module block.
 #
 # Each entry is the module's defaults (the fleet's shape) plus the ways
-# that repository differs today. The differences were imported as they
-# are, so the first apply changed nothing; bringing one into line is its
-# own change, and removes its override here. wcs-wiki is private, so it
+# that repository differs from it. A read-only default workflow token is a
+# deliberate difference, not drift: those repositories' workflows ask for
+# write where they need it, and narrowing a token is never a regression. wcs-wiki is private, so it
 # has no secret scanning or push protection (not available on a private
 # repository on the free plan), nor a ruleset. It and .github have no dev
 # branch, and .github has no protect-main ruleset. infra's second
@@ -18,17 +18,17 @@
 locals {
   github_repos = {
     ".github"                = { dev_branch = false, protect_main = false }
-    "api-deejaytools"        = { has_wiki = true }
-    "api-kaianolevine-com"   = { has_wiki = true, default_workflow_permissions = "read" }
+    "api-deejaytools"        = {}
+    "api-kaianolevine-com"   = { default_workflow_permissions = "read" }
     "common-python-utils"    = {}
-    "db-ops"                 = { has_wiki = true }
+    "db-ops"                 = {}
     "deejaytools-com"        = {}
-    "ecosystem-standards"    = { has_wiki = true }
+    "ecosystem-standards"    = {}
     "identity"               = {}
-    "infra"                  = { has_wiki = true }
+    "infra"                  = {}
     "kwalla-dance"           = {}
     "wcs-wiki"               = { visibility = "private", dev_branch = false, protect_main = false }
-    "website-astro-software" = { has_wiki = true, default_workflow_permissions = "read" }
+    "website-astro-software" = { default_workflow_permissions = "read" }
     "website-astro-wcs"      = { default_workflow_permissions = "read" }
     "website-astro-wcsmn"    = {}
   }

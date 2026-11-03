@@ -479,8 +479,9 @@ or force-push of the default branch, no bypass; per repository, because
 organisation rulesets need GitHub Team). A cog's repository comes with
 its module block in `cogs.tf`, so adding the block creates it; every
 other repository is listed in `github_repos.tf`. Each lists only how it
-differs from that shape today; they were imported as they were, so the
-first apply changed nothing.
+differs from that shape; they were imported as they were, so the first
+apply changed nothing. A read-only default workflow token is a deliberate
+difference, kept where a repository's workflows ask for write themselves.
 
 Description, topics, other rulesets (infra's own `main`) and Actions
 variables are not managed here. Merge options are set when a repository
