@@ -188,3 +188,30 @@ resource "aws_cloudwatch_metric_alarm" "postgres_wal_dir_filling" {
   alarm_actions = [aws_sns_topic.data_alerts.arn]
   ok_actions    = [aws_sns_topic.data_alerts.arn]
 }
+
+# archive_timeout is set by hand, and an image update or a restore can put it
+# back to the default unnoticed. db-poller compares it with the value it is
+# configured to expect for each database (db-ops, poller.Settings) and
+# publishes 1 on a difference, so the expected values live there, not here.
+# One period: a setting does not flicker.
+resource "aws_cloudwatch_metric_alarm" "postgres_archive_timeout_drift" {
+  for_each = toset(local.postgres_databases)
+
+  alarm_name          = "postgres-${each.key}-archive-timeout-drift"
+  alarm_description   = "${each.key}'s archive_timeout differs from the value db-poller expects: point-in-time recovery's lag and a restore's WAL replay are no longer what was planned. db-poller's log line names the actual and expected values."
+  namespace           = "MiniAppPolis/Postgres"
+  metric_name         = "ArchiveTimeoutDrift"
+  statistic           = "Maximum"
+  period              = 300
+  evaluation_periods  = 1
+  threshold           = 0
+  comparison_operator = "GreaterThanThreshold"
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    Database = each.key
+  }
+
+  alarm_actions = [aws_sns_topic.data_alerts.arn]
+  ok_actions    = [aws_sns_topic.data_alerts.arn]
+}
