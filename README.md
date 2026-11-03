@@ -459,7 +459,7 @@ private keys kept in Doppler and synced by `doppler/github.tf`:
 | App | Secrets | Where | Permissions |
 | --- | --- | --- | --- |
 | `mini-app-polis-infra-read` | `INFRA_READ_APP_CLIENT_ID`, `INFRA_READ_APP_PRIVATE_KEY` | repository secrets, plan jobs (pull request and nightly) | Repository: Administration **Read**, Metadata **Read**. Organization: Administration **Read** |
-| `mini-app-polis-infra-write` | `INFRA_WRITE_APP_CLIENT_ID`, `INFRA_WRITE_APP_PRIVATE_KEY` | `production` environment secrets, apply job | Repository: Administration **Write**, Metadata **Read**. Organization: Administration **Write** |
+| `mini-app-polis-infra-write` | `INFRA_WRITE_APP_CLIENT_ID`, `INFRA_WRITE_APP_PRIVATE_KEY` | `production` environment secrets, apply job | Repository: Administration **Write**, Contents **Write**, Metadata **Read**. Organization: Administration **Write** |
 
 Two Apps rather than a fine-grained personal access token: an App acts
 as itself rather than as the owner, its installation tokens last an hour
@@ -467,6 +467,20 @@ and are minted per run, and splitting read from write keeps the write
 key out of every job a pull request can start, the same split as the
 Cloudflare tokens. Neither App has a webhook. A permission is added to
 both Apps, at Read and Write, when a resource's plan first needs it.
+
+Every repository in the organisation is declared in `github_repos.tf`
+through `modules/github-repo`, which holds the fleet's shape (public,
+main and dev, secret scanning and push protection, merge options, Actions
+and workflow-token permissions). A repository's entry lists only how it
+differs from that shape today; they were imported as they were, so the
+first apply changed nothing. Description, topics, rulesets and Actions
+variables are not managed here. Merge options are set when a repository
+is created but not held: GitHub shows them only to a caller with push
+access, which the read App deliberately lacks. The write App has push
+access (Contents **Write**, which it also needs to create a dev branch),
+so the apply job reads their real values and an update to a repository
+sends them back unchanged; without it, an apply would send them as
+false and turn off every merge method.
 
 ## Why Terraform, not CloudFormation/SAM/CDK
 
