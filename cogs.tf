@@ -111,13 +111,22 @@ module "deejay" {
     }
   }
 
+  # The new-music intake's mode (off unless set) and folders, and where
+  # every music flow keeps its run records (deejay-cog ADR-0007).
   ssm_optional_parameters = {
-    LOGGING_LEVEL             = "LOGGING_LEVEL"
-    SENTRY_DSN_COGS           = "SENTRY_DSN_COGS"
-    SPOTIFY_RADIO_PLAYLIST_ID = "SPOTIFY_RADIO_PLAYLIST_ID"
-    SPOTIPY_CLIENT_ID         = "SPOTIPY_CLIENT_ID"
-    SPOTIPY_CLIENT_SECRET     = "SPOTIPY_CLIENT_SECRET"
-    SPOTIPY_REFRESH_TOKEN     = "SPOTIPY_REFRESH_TOKEN"
+    LOGGING_LEVEL                   = "LOGGING_LEVEL"
+    MUSIC_TAGGING_STATE_FOLDER_ID   = "MUSIC_TAGGING_STATE_FOLDER_ID"
+    NEW_MUSIC_DESTINATION_FOLDER_ID = "NEW_MUSIC_DESTINATION_FOLDER_ID"
+    NEW_MUSIC_INPUT_FOLDER_ID       = "NEW_MUSIC_INPUT_FOLDER_ID"
+    NEW_MUSIC_MAX_FILES_PER_RUN     = "NEW_MUSIC_MAX_FILES_PER_RUN"
+    NEW_MUSIC_MODE                  = "NEW_MUSIC_MODE"
+    NEW_MUSIC_ORIGINALS_FOLDER_ID   = "NEW_MUSIC_ORIGINALS_FOLDER_ID"
+    NEW_MUSIC_REVIEW_FOLDER_ID      = "NEW_MUSIC_REVIEW_FOLDER_ID"
+    SENTRY_DSN_COGS                 = "SENTRY_DSN_COGS"
+    SPOTIFY_RADIO_PLAYLIST_ID       = "SPOTIFY_RADIO_PLAYLIST_ID"
+    SPOTIPY_CLIENT_ID               = "SPOTIPY_CLIENT_ID"
+    SPOTIPY_CLIENT_SECRET           = "SPOTIPY_CLIENT_SECRET"
+    SPOTIPY_REFRESH_TOKEN           = "SPOTIPY_REFRESH_TOKEN"
   }
 }
 
@@ -162,10 +171,18 @@ module "deejay_fingerprint" {
     DEEJAY_COG_API_KEY      = "DEEJAY_COG_API_KEY"
     GOOGLE_CREDENTIALS_JSON = "GOOGLE_CREDENTIALS_JSON"
   }
+  # It finishes the new-music intake for the files it identifies, so it
+  # reads the same mode and folders as the deejay worker.
   ssm_optional_parameters = {
-    LOGGING_LEVEL        = "LOGGING_LEVEL"
-    RETAG_MIN_CONFIDENCE = "RETAG_MIN_CONFIDENCE"
-    SENTRY_DSN_COGS      = "SENTRY_DSN_COGS"
+    LOGGING_LEVEL                   = "LOGGING_LEVEL"
+    MUSIC_TAGGING_STATE_FOLDER_ID   = "MUSIC_TAGGING_STATE_FOLDER_ID"
+    NEW_MUSIC_DESTINATION_FOLDER_ID = "NEW_MUSIC_DESTINATION_FOLDER_ID"
+    NEW_MUSIC_INPUT_FOLDER_ID       = "NEW_MUSIC_INPUT_FOLDER_ID"
+    NEW_MUSIC_MODE                  = "NEW_MUSIC_MODE"
+    NEW_MUSIC_ORIGINALS_FOLDER_ID   = "NEW_MUSIC_ORIGINALS_FOLDER_ID"
+    NEW_MUSIC_REVIEW_FOLDER_ID      = "NEW_MUSIC_REVIEW_FOLDER_ID"
+    RETAG_MIN_CONFIDENCE            = "RETAG_MIN_CONFIDENCE"
+    SENTRY_DSN_COGS                 = "SENTRY_DSN_COGS"
   }
 }
 
@@ -419,10 +436,10 @@ module "watcher" {
   ssm_optional_parameters = {
     LOGGING_LEVEL   = "LOGGING_LEVEL"
     SENTRY_DSN_COGS = "SENTRY_DSN_COGS"
-    # The music upload folder, for the music-uploads watcher. Optional: a
+    # The new-music input folder, for the music-uploads watcher. Optional: a
     # required name with no value fails every watcher's cold start, while
     # watcher-cog skips the music-uploads tick when this is unset or empty.
-    MUSIC_UPLOAD_SOURCE_FOLDER_ID = "MUSIC_UPLOAD_SOURCE_FOLDER_ID"
+    NEW_MUSIC_INPUT_FOLDER_ID = "NEW_MUSIC_INPUT_FOLDER_ID"
   }
 }
 
