@@ -129,7 +129,8 @@ module "deejay_fingerprint" {
   source = "./modules/cog-worker"
 
   # deejay-cog's repository is held by module.deejay.
-  create_repository = false
+  create_repository    = false
+  github_repository_id = module.deejay.repository_id
 
   name                     = "deejay-fingerprint"
   github_repo              = "mini-app-polis/deejay-cog"
@@ -282,11 +283,6 @@ module "task_manager" {
   api_base_url             = var.kaiano_api_base_url
   non_settings_names       = local.non_settings_names
 
-  # Created after GitHub made immutable OIDC subjects the default, which a
-  # repository cannot turn off: its workflows present the org's and the
-  # repository's ids, not their names.
-  github_oidc_subject = "repo:mini-app-polis@270520182/task-manager-cog@1427477351"
-
   handler      = "task_manager_cog.worker.lambda_handler"
   architecture = "arm64"
 
@@ -438,9 +434,6 @@ module "task_groomer" {
   api_base_url             = var.kaiano_api_base_url
   non_settings_names       = local.non_settings_names
 
-  # Created with GitHub's immutable OIDC subjects, as task-manager-cog was.
-  github_oidc_subject = "repo:mini-app-polis@270520182/task-groomer-cog@1428880997"
-
   handler      = "task_groomer_cog.worker.lambda_handler"
   architecture = "arm64"
 
@@ -499,9 +492,6 @@ module "rotator" {
   alert_email              = local.alert_email
   api_base_url             = var.kaiano_api_base_url
   non_settings_names       = local.non_settings_names
-
-  # Created with GitHub's immutable OIDC subjects, as task-manager-cog was.
-  github_oidc_subject = "repo:mini-app-polis@270520182/rotator-cog@1433517907"
 
   handler      = "rotator_cog.worker.lambda_handler"
   architecture = "arm64"

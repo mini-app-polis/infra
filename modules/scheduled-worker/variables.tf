@@ -13,6 +13,18 @@ variable "github_repo" {
   type        = string
 }
 
+variable "github_repository_id" {
+  description = "The numeric id of github_repo, for a block that does not hold the repository itself (create_repository = false). A block that holds it reads the id from it."
+  type        = number
+  default     = null
+}
+
+variable "github_owner_id" {
+  description = "The numeric id of github_repo's owner, as the immutable OIDC subject names it."
+  type        = string
+  default     = "270520182"
+}
+
 variable "github_oidc_provider_arn" {
   description = "The account's GitHub OIDC provider, from the root's account.tf."
   type        = string
