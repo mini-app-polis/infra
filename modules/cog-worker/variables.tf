@@ -18,20 +18,16 @@ variable "github_repo" {
   type        = string
 }
 
-variable "github_oidc_subject" {
-  description = <<-DESC
-    The repository part of the OIDC subject its workflows present, when it
-    is not repo:<github_repo>. GitHub gives repositories created since
-    October 2026 immutable subjects, repo:<owner>@<owner id>/<repo>@<repo
-    id>, and they cannot opt out. Unset, the name form is trusted.
-  DESC
-  type        = string
+variable "github_repository_id" {
+  description = "The numeric id of github_repo, for a block that does not hold the repository itself (create_repository = false). A block that holds it reads the id from it."
+  type        = number
   default     = null
+}
 
-  validation {
-    condition     = var.github_oidc_subject == null || can(regex("^repo:[^:]+$", var.github_oidc_subject))
-    error_message = "github_oidc_subject is repo:<...> with no ref part; the ref is pinned by the module."
-  }
+variable "github_owner_id" {
+  description = "The numeric id of github_repo's owner, as the immutable OIDC subject names it."
+  type        = string
+  default     = "270520182"
 }
 
 variable "github_oidc_provider_arn" {
@@ -246,4 +242,19 @@ variable "log_retention_days" {
   description = "CloudWatch Logs retains forever by default; this group is declared so it does not."
   type        = number
   default     = 30
+}
+
+variable "create_repository" {
+  description = "Whether this block creates and holds the cog's GitHub repository (github_repo) in the fleet's shape. False for a second function of a cog whose repository another block already holds."
+  type        = bool
+  default     = true
+}
+
+variable "repository_settings" {
+  description = "How the cog's repository differs from the fleet's shape (modules/github-repo), while it does."
+  type = object({
+    has_wiki                     = optional(bool, false)
+    default_workflow_permissions = optional(string, "write")
+  })
+  default = {}
 }

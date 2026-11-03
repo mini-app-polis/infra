@@ -7,6 +7,7 @@
 
 mock_provider "aws" {}
 mock_provider "archive" {}
+mock_provider "github" {}
 
 variables {
   github_oidc_provider_arn = "arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com"

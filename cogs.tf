@@ -20,6 +20,9 @@ locals {
 module "evaluator" {
   source = "./modules/cog-worker"
 
+  # How its repository differs from the fleet's shape today.
+  repository_settings = { has_wiki = true, default_workflow_permissions = "read" }
+
   name                     = "evaluator"
   github_repo              = "mini-app-polis/evaluator-cog"
   github_oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
@@ -57,6 +60,9 @@ module "evaluator" {
 
 module "deejay" {
   source = "./modules/cog-worker"
+
+  # How its repository differs from the fleet's shape today.
+  repository_settings = { has_wiki = true, default_workflow_permissions = "read" }
 
   name                     = "deejay"
   github_repo              = "mini-app-polis/deejay-cog"
@@ -121,6 +127,10 @@ module "deejay" {
 # second) and its longer per-file time hold up nothing else.
 module "deejay_fingerprint" {
   source = "./modules/cog-worker"
+
+  # deejay-cog's repository is held by module.deejay.
+  create_repository    = false
+  github_repository_id = module.deejay.repository_id
 
   name                     = "deejay-fingerprint"
   github_repo              = "mini-app-polis/deejay-cog"
@@ -273,11 +283,6 @@ module "task_manager" {
   api_base_url             = var.kaiano_api_base_url
   non_settings_names       = local.non_settings_names
 
-  # Created after GitHub made immutable OIDC subjects the default, which a
-  # repository cannot turn off: its workflows present the org's and the
-  # repository's ids, not their names.
-  github_oidc_subject = "repo:mini-app-polis@270520182/task-manager-cog@1427477351"
-
   handler      = "task_manager_cog.worker.lambda_handler"
   architecture = "arm64"
 
@@ -356,6 +361,9 @@ module "task_manager" {
 module "watcher" {
   source = "./modules/scheduled-worker"
 
+  # How its repository differs from the fleet's shape today.
+  repository_settings = { has_wiki = true, default_workflow_permissions = "read" }
+
   name                     = "watcher"
   github_repo              = "mini-app-polis/watcher-cog"
   github_oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
@@ -426,9 +434,6 @@ module "task_groomer" {
   api_base_url             = var.kaiano_api_base_url
   non_settings_names       = local.non_settings_names
 
-  # Created with GitHub's immutable OIDC subjects, as task-manager-cog was.
-  github_oidc_subject = "repo:mini-app-polis@270520182/task-groomer-cog@1428880997"
-
   handler      = "task_groomer_cog.worker.lambda_handler"
   architecture = "arm64"
 
@@ -478,15 +483,15 @@ module "task_groomer" {
 module "rotator" {
   source = "./modules/cog-worker"
 
+  # How its repository differs from the fleet's shape today.
+  repository_settings = { has_wiki = true }
+
   name                     = "rotator"
   github_repo              = "mini-app-polis/rotator-cog"
   github_oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
   alert_email              = local.alert_email
   api_base_url             = var.kaiano_api_base_url
   non_settings_names       = local.non_settings_names
-
-  # Created with GitHub's immutable OIDC subjects, as task-manager-cog was.
-  github_oidc_subject = "repo:mini-app-polis@270520182/rotator-cog@1433517907"
 
   handler      = "rotator_cog.worker.lambda_handler"
   architecture = "arm64"

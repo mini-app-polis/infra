@@ -231,10 +231,19 @@ data "aws_iam_policy_document" "deploy_assume" {
     # request, another branch or another workflow in the cog's repository
     # cannot push code to the production function. A by-hand redeploy is
     # dispatched from main too.
+    #
+    # Both subject forms are trusted while the organisation moves to the
+    # immutable one: repo:<owner>/<repo> by name, and
+    # repo:<owner>@<owner id>/<repo>@<repo id>, which a rename or a
+    # re-registered name cannot take over. The name form goes once the
+    # organisation's immutable-subject setting is on.
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repo}:ref:refs/heads/main"]
+      values = [
+        "repo:${var.github_repo}:ref:refs/heads/main",
+        "repo:${local.github_owner}@${var.github_owner_id}/${local.github_repository}@${local.github_repository_id}:ref:refs/heads/main",
+      ]
     }
   }
 }
@@ -305,4 +314,24 @@ resource "aws_cloudwatch_metric_alarm" "errors" {
   ok_actions    = [aws_sns_topic.alerts.arn]
 
   tags = local.tags
+}
+
+locals {
+  github_owner      = element(split("/", var.github_repo), 0)
+  github_repository = element(split("/", var.github_repo), 1)
+  # The repository's numeric id: from the repository this block holds, or
+  # given by the block that holds it.
+  github_repository_id = var.create_repository ? module.repository[0].repo_id : var.github_repository_id
+}
+
+# The cog's GitHub repository, in the fleet's shape: adding the module
+# block is all it takes to create it. Actions variables reach it through
+# doppler/github.tf.
+module "repository" {
+  source = "../github-repo"
+  count  = var.create_repository ? 1 : 0
+
+  name                         = element(split("/", var.github_repo), 1)
+  has_wiki                     = var.repository_settings.has_wiki
+  default_workflow_permissions = var.repository_settings.default_workflow_permissions
 }

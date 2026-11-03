@@ -13,6 +13,18 @@ variable "github_repo" {
   type        = string
 }
 
+variable "github_repository_id" {
+  description = "The numeric id of github_repo, for a block that does not hold the repository itself (create_repository = false). A block that holds it reads the id from it."
+  type        = number
+  default     = null
+}
+
+variable "github_owner_id" {
+  description = "The numeric id of github_repo's owner, as the immutable OIDC subject names it."
+  type        = string
+  default     = "270520182"
+}
+
 variable "github_oidc_provider_arn" {
   description = "The account's GitHub OIDC provider, from the root's account.tf."
   type        = string
@@ -149,4 +161,19 @@ variable "log_retention_days" {
   description = "CloudWatch Logs retains forever by default."
   type        = number
   default     = 14
+}
+
+variable "create_repository" {
+  description = "Whether this block creates and holds the cog's GitHub repository (github_repo) in the fleet's shape. False for a second function of a cog whose repository another block already holds."
+  type        = bool
+  default     = true
+}
+
+variable "repository_settings" {
+  description = "How the cog's repository differs from the fleet's shape (modules/github-repo), while it does."
+  type = object({
+    has_wiki                     = optional(bool, false)
+    default_workflow_permissions = optional(string, "write")
+  })
+  default = {}
 }
