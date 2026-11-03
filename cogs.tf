@@ -20,6 +20,9 @@ locals {
 module "evaluator" {
   source = "./modules/cog-worker"
 
+  # How its repository differs from the fleet's shape today.
+  repository_settings = { has_wiki = true, default_workflow_permissions = "read" }
+
   name                     = "evaluator"
   github_repo              = "mini-app-polis/evaluator-cog"
   github_oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
@@ -57,6 +60,9 @@ module "evaluator" {
 
 module "deejay" {
   source = "./modules/cog-worker"
+
+  # How its repository differs from the fleet's shape today.
+  repository_settings = { has_wiki = true, default_workflow_permissions = "read" }
 
   name                     = "deejay"
   github_repo              = "mini-app-polis/deejay-cog"
@@ -121,6 +127,9 @@ module "deejay" {
 # second) and its longer per-file time hold up nothing else.
 module "deejay_fingerprint" {
   source = "./modules/cog-worker"
+
+  # deejay-cog's repository is held by module.deejay.
+  create_repository = false
 
   name                     = "deejay-fingerprint"
   github_repo              = "mini-app-polis/deejay-cog"
@@ -356,6 +365,9 @@ module "task_manager" {
 module "watcher" {
   source = "./modules/scheduled-worker"
 
+  # How its repository differs from the fleet's shape today.
+  repository_settings = { has_wiki = true, default_workflow_permissions = "read" }
+
   name                     = "watcher"
   github_repo              = "mini-app-polis/watcher-cog"
   github_oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
@@ -477,6 +489,9 @@ module "task_groomer" {
 # (account.tf), as for every cog.
 module "rotator" {
   source = "./modules/cog-worker"
+
+  # How its repository differs from the fleet's shape today.
+  repository_settings = { has_wiki = true }
 
   name                     = "rotator"
   github_repo              = "mini-app-polis/rotator-cog"

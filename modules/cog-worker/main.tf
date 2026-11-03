@@ -459,3 +459,15 @@ resource "aws_cloudwatch_metric_alarm" "duration_near_timeout" {
 
   tags = local.tags
 }
+
+# The cog's GitHub repository, in the fleet's shape: adding the module
+# block is all it takes to create it. Actions variables reach it through
+# doppler/github.tf.
+module "repository" {
+  source = "../github-repo"
+  count  = var.create_repository ? 1 : 0
+
+  name                         = element(split("/", var.github_repo), 1)
+  has_wiki                     = var.repository_settings.has_wiki
+  default_workflow_permissions = var.repository_settings.default_workflow_permissions
+}

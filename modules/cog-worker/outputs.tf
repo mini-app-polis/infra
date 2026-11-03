@@ -64,3 +64,8 @@ output "settings_allowlist" {
   description = "The worker's SETTINGS_ALLOWLIST: the comma-separated, sorted names it loads whose value is in mini-app-polis-settings. Names only."
   value       = local.settings_allowlist
 }
+
+output "repository_id" {
+  description = "The cog's repository's numeric id, as an immutable OIDC subject names it. Null when this block does not hold the repository."
+  value       = try(module.repository[0].repo_id, null)
+}

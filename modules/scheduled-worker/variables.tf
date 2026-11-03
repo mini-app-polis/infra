@@ -150,3 +150,18 @@ variable "log_retention_days" {
   type        = number
   default     = 14
 }
+
+variable "create_repository" {
+  description = "Whether this block creates and holds the cog's GitHub repository (github_repo) in the fleet's shape. False for a second function of a cog whose repository another block already holds."
+  type        = bool
+  default     = true
+}
+
+variable "repository_settings" {
+  description = "How the cog's repository differs from the fleet's shape (modules/github-repo), while it does."
+  type = object({
+    has_wiki                     = optional(bool, false)
+    default_workflow_permissions = optional(string, "write")
+  })
+  default = {}
+}
