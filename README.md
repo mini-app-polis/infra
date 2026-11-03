@@ -448,6 +448,26 @@ Zone WAF, Single Redirect, Cache Rules, Workers Routes, Bot Management.
 Registration, renewal and transfer stay in the dashboard and are in
 neither token.
 
+## GitHub
+
+The organisation's and its repositories' settings are managed here
+through the GitHub provider. CI authenticates as one of two GitHub Apps,
+created by hand on the organisation (Settings → Developer settings →
+GitHub Apps), installed on all repositories, with their client IDs and
+private keys kept in Doppler and synced by `doppler/github.tf`:
+
+| App | Secrets | Where | Permissions |
+| --- | --- | --- | --- |
+| `mini-app-polis-infra-read` | `INFRA_READ_APP_CLIENT_ID`, `INFRA_READ_APP_PRIVATE_KEY` | repository secrets, plan jobs (pull request and nightly) | Repository: Administration **Read**, Metadata **Read**. Organization: Administration **Read** |
+| `mini-app-polis-infra-write` | `INFRA_WRITE_APP_CLIENT_ID`, `INFRA_WRITE_APP_PRIVATE_KEY` | `production` environment secrets, apply job | Repository: Administration **Write**, Metadata **Read**. Organization: Administration **Write** |
+
+Two Apps rather than a fine-grained personal access token: an App acts
+as itself rather than as the owner, its installation tokens last an hour
+and are minted per run, and splitting read from write keeps the write
+key out of every job a pull request can start, the same split as the
+Cloudflare tokens. Neither App has a webhook. A permission is added to
+both Apps, at Read and Write, when a resource's plan first needs it.
+
 ## Why Terraform, not CloudFormation/SAM/CDK
 
 The first decision record for the fleet's AWS foundation (region, one
