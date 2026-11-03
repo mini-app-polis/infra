@@ -233,8 +233,9 @@ jobs:
     concurrency:
       group: terraform-apply
       cancel-in-progress: false
-    # Edit token and the infra-write App's credentials, held as `production`
-    # environment secrets so no other job can read them.
+    # Edit token, the infra-write App's credentials and the infra-apply
+    # machine key, held as `production` environment secrets so no other job
+    # can read them.
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PAGES }}
@@ -298,6 +299,21 @@ jobs:
             echo "$destroys"
           fi
           terraform apply -no-color tfplan
+
+      # A new email subscription delivers nothing until its emailed link is
+      # clicked, so each one becomes a person task on the board, filed as
+      # the infra-apply machine. Never fails the apply: the script warns
+      # and exits 0 when it cannot file.
+      - name: file confirmation tasks for new alert subscriptions
+        if: success()
+        continue-on-error: true
+        env:
+          INFRA_APPLY_API_KEY: ${{ secrets.INFRA_APPLY_API_KEY }}
+          INFRA_APPLY_API_URL: https://api.kaianolevine.com
+        run: |
+          terraform show -json tfplan > "$RUNNER_TEMP/plan.json"
+          terraform show -json > "$RUNNER_TEMP/state.json"
+          python3 scripts/file_sns_confirmations.py "$RUNNER_TEMP/plan.json" "$RUNNER_TEMP/state.json"
 
   # SEC-001/002/004: secret scanning (gating) and static analysis
   # (advisory — semgrep's auto config includes Terraform rules), from the

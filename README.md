@@ -99,8 +99,11 @@ import {
 Add a `module` block to `cogs.tf`, list its secrets by name (their values go
 in Doppler), pass it `non_settings_names = local.non_settings_names` (see
 "Doppler layout"), add it to the `cogs` output and
-`cog_max_in_flight_seconds` in `outputs.tf`, apply, confirm the alert subscription email, and set the three
-repository variables from `terraform output cogs` in the cog's repository.
+`cog_max_in_flight_seconds` in `outputs.tf`, and merge. The apply creates the
+cog's repository (`modules/github-repo`), `doppler/github.tf` gives it its
+deploy variables (when `doppler/` is next applied, above), and the apply job files a board task to confirm the new
+alert subscription email (`scripts/file_sns_confirmations.py`): that click is
+the one step left to a person.
 
 ## Lambda layers
 
