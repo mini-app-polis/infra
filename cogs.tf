@@ -22,8 +22,8 @@ locals {
 module "evaluator" {
   source = "./modules/cog-worker"
 
-  # How its repository differs from the fleet's shape today.
-  repository_settings = { has_wiki = true, default_workflow_permissions = "read" }
+  # Its workflows ask for write where they need it.
+  repository_settings = { default_workflow_permissions = "read" }
 
   name                     = "evaluator"
   github_repo              = "mini-app-polis/evaluator-cog"
@@ -63,8 +63,8 @@ module "evaluator" {
 module "deejay" {
   source = "./modules/cog-worker"
 
-  # How its repository differs from the fleet's shape today.
-  repository_settings = { has_wiki = true, default_workflow_permissions = "read" }
+  # Its workflows ask for write where they need it.
+  repository_settings = { default_workflow_permissions = "read" }
 
   name                     = "deejay"
   github_repo              = "mini-app-polis/deejay-cog"
@@ -363,8 +363,8 @@ module "task_manager" {
 module "watcher" {
   source = "./modules/scheduled-worker"
 
-  # How its repository differs from the fleet's shape today.
-  repository_settings = { has_wiki = true, default_workflow_permissions = "read" }
+  # Its workflows ask for write where they need it.
+  repository_settings = { default_workflow_permissions = "read" }
 
   name                     = "watcher"
   github_repo              = "mini-app-polis/watcher-cog"
@@ -484,9 +484,6 @@ module "task_groomer" {
 # (account.tf), as for every cog.
 module "rotator" {
   source = "./modules/cog-worker"
-
-  # How its repository differs from the fleet's shape today.
-  repository_settings = { has_wiki = true }
 
   name                     = "rotator"
   github_repo              = "mini-app-polis/rotator-cog"
