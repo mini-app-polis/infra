@@ -1,6 +1,8 @@
-# One module per pipeline cog. Adding a cog is adding a block here; its
-# repository then needs AWS_DEPLOY_ROLE_ARN, AWS_REGION and
-# AWS_FUNCTION_NAME (terraform output cogs) and a confirmed alert email.
+# One module per pipeline cog. Adding a cog is adding a block here: the
+# block creates its repository, doppler/github.tf gives the repository its
+# deploy variables (AWS_DEPLOY_ROLE_ARN, AWS_FUNCTION_NAME, AWS_REGION) when
+# doppler/ is next applied, and the apply job files a board task to confirm
+# the new alert email subscription (scripts/file_sns_confirmations.py).
 #
 # handler, architecture and the runtime must match the cog's deploy job in
 # its ci.yml. Secrets are listed by name only; their values are in Doppler.
