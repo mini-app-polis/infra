@@ -139,8 +139,10 @@ locals {
         repo        = "infra"
         environment = null
         secrets = {
-          CLOUDFLARE_API_TOKEN_READ = "prd.CLOUDFLARE_API_TOKEN_READ"
-          DOPPLER_TOKEN_PAGES       = "prd.DOPPLER_TOKEN_PAGES"
+          CLOUDFLARE_API_TOKEN_READ  = "prd.CLOUDFLARE_API_TOKEN_READ"
+          DOPPLER_TOKEN_PAGES        = "prd.DOPPLER_TOKEN_PAGES"
+          INFRA_READ_APP_CLIENT_ID   = "prd.INFRA_READ_APP_CLIENT_ID"
+          INFRA_READ_APP_PRIVATE_KEY = "prd.INFRA_READ_APP_PRIVATE_KEY"
         }
         variables = {}
         literals  = local.root.ci_roles
@@ -148,9 +150,13 @@ locals {
       "infra/production" = {
         repo        = "infra"
         environment = "production"
-        secrets     = { CLOUDFLARE_API_TOKEN = "prd.CLOUDFLARE_API_TOKEN" }
-        variables   = {}
-        literals    = {}
+        secrets = {
+          CLOUDFLARE_API_TOKEN        = "prd.CLOUDFLARE_API_TOKEN"
+          INFRA_WRITE_APP_CLIENT_ID   = "prd.INFRA_WRITE_APP_CLIENT_ID"
+          INFRA_WRITE_APP_PRIVATE_KEY = "prd.INFRA_WRITE_APP_PRIVATE_KEY"
+        }
+        variables = {}
+        literals  = {}
       }
       "wcs-wiki" = {
         repo        = "wcs-wiki"
