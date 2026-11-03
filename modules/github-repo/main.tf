@@ -53,7 +53,9 @@ resource "github_repository" "this" {
     # GitHub returns a repository's merge options only to a caller with push
     # access, and the infra-read App that plans has none, so it reads them
     # as false or unset. They are set when a repository is created here and
-    # not held afterwards.
+    # not held afterwards. The infra-write App that applies does have push
+    # access (Contents write), so an update sends their real values back;
+    # it must keep it, or an apply would turn every merge method off.
     ignore_changes = [
       allow_merge_commit,
       allow_squash_merge,
