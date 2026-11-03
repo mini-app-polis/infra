@@ -232,18 +232,14 @@ data "aws_iam_policy_document" "deploy_assume" {
     # cannot push code to the production function. A by-hand redeploy is
     # dispatched from main too.
     #
-    # Both subject forms are trusted while the organisation moves to the
-    # immutable one: repo:<owner>/<repo> by name, and
+    # Only the immutable subject is trusted:
     # repo:<owner>@<owner id>/<repo>@<repo id>, which a rename or a
-    # re-registered name cannot take over. The name form goes once the
-    # organisation's immutable-subject setting is on.
+    # re-registered name cannot take over. Every cog repository issues it
+    # (created after GitHub made it the default, or opted in).
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values = [
-        "repo:${var.github_repo}:ref:refs/heads/main",
-        "repo:${local.github_owner}@${var.github_owner_id}/${local.github_repository}@${local.github_repository_id}:ref:refs/heads/main",
-      ]
+      values   = ["repo:${local.github_owner}@${var.github_owner_id}/${local.github_repository}@${local.github_repository_id}:ref:refs/heads/main"]
     }
   }
 }
