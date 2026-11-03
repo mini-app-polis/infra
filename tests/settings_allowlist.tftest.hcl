@@ -5,7 +5,15 @@
 #
 #   terraform init && terraform test
 
-mock_provider "aws" {}
+mock_provider "aws" {
+  # A mocked policy document's json is otherwise a random string, which the
+  # role's assume_role_policy validation refuses as not a JSON object.
+  mock_data "aws_iam_policy_document" {
+    defaults = {
+      json = "{}"
+    }
+  }
+}
 mock_provider "archive" {}
 mock_provider "github" {}
 
