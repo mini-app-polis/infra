@@ -123,7 +123,9 @@ resource "aws_lambda_function" "worker" {
   # first, and drops any still waiting when maximum_event_age runs out —
   # undoing the fan-out. Overlap with a slow previous tick is harmless: the
   # API's claims make the second ask a no-op.
-  reserved_concurrent_executions = length(var.schedule_targets)
+  # Each cron job has a slot of its own too, so a job that lands on a tick
+  # neither throttles a folder nor waits behind one.
+  reserved_concurrent_executions = length(var.schedule_targets) + length(var.cron_jobs)
 
   environment {
     variables = merge(
@@ -207,6 +209,40 @@ resource "aws_lambda_permission" "schedule" {
   function_name = aws_lambda_function.worker.function_name
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.schedule.arn
+}
+
+# One rule per cron job: a job runs on its own clock, not the tick's, and
+# EventBridge's five targets per rule are the tick's to spend. A failed job
+# is an error invocation, counted by the error alarm like a failed tick;
+# with no retries, the next scheduled run is the retry.
+resource "aws_cloudwatch_event_rule" "cron_job" {
+  for_each = var.cron_jobs
+
+  name                = "${var.name}-${each.key}"
+  description         = "Invokes ${var.name}-worker for ${each.key} at ${each.value.schedule_expression}."
+  schedule_expression = each.value.schedule_expression
+  state               = var.enabled ? "ENABLED" : "DISABLED"
+
+  tags = local.tags
+}
+
+resource "aws_cloudwatch_event_target" "cron_job" {
+  for_each = var.cron_jobs
+
+  rule      = aws_cloudwatch_event_rule.cron_job[each.key].name
+  arn       = aws_lambda_function.worker.arn
+  target_id = "${var.name}-${each.key}"
+  input     = jsonencode(each.value.event)
+}
+
+resource "aws_lambda_permission" "cron_job" {
+  for_each = var.cron_jobs
+
+  statement_id  = "AllowEventBridge-${each.key}"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.worker.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.cron_job[each.key].arn
 }
 
 # ── Deploy ───────────────────────────────────────────────────────────────

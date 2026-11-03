@@ -409,6 +409,19 @@ module "watcher" {
     name => { watcher = name }
   }
 
+  # deejay-cog's library backfill, once a night: watcher-cog's jobs.py asks
+  # the API for one library-backfill run, and deejay-cog retags the next
+  # chunk of the library (the chunk size and whether it writes at all are
+  # deejay-cog's settings; it does nothing until LIBRARY_BACKFILL_MODE is
+  # set). 10:41 UTC is the small hours in the US, clear of drift at 09:17.
+  # The job name is watcher-cog's JOBS key; an unknown one fails loudly.
+  cron_jobs = {
+    "library-backfill" = {
+      schedule_expression = "cron(41 10 * * ? *)"
+      event               = { job = "library-backfill" }
+    }
+  }
+
   # Ten failed ticks in a row, not 3 of 5: an API deploy or restart fails a
   # few ticks and the next tick catches up, so only a sustained failure pages.
   error_alarm_window    = 10
