@@ -474,7 +474,9 @@ main and dev, secret scanning and push protection, merge options, Actions
 and workflow-token permissions). A repository's entry lists only how it
 differs from that shape today; they were imported as they were, so the
 first apply changed nothing. Description, topics, rulesets and Actions
-variables are not managed here.
+variables are not managed here. Merge options are set when a repository
+is created but not held: GitHub shows them only to a caller with push
+access, which the read App deliberately lacks.
 
 ## Why Terraform, not CloudFormation/SAM/CDK
 

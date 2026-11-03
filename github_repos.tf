@@ -8,11 +8,11 @@
 # are, so the first apply changed nothing; bringing one into line is its
 # own change, and removes its override here. wcs-wiki is private, so it
 # has no secret scanning or push protection (not available on a private
-# repository on the free plan), and it has no dev branch.
+# repository on the free plan). It and .github have no dev branch.
 
 locals {
   github_repos = {
-    ".github"                = {}
+    ".github"                = { dev_branch = false }
     "api-deejaytools"        = { has_wiki = true }
     "api-kaianolevine-com"   = { has_wiki = true, default_workflow_permissions = "read" }
     "common-python-utils"    = {}

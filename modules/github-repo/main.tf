@@ -1,7 +1,8 @@
 # One repository in the fleet's shape: public, main as default branch with
 # a dev branch beside it, secret scanning and push protection on, the
-# fleet's merge options, Actions enabled with all actions allowed, and a
-# workflow token that can write and open pull requests.
+# fleet's merge options (set on create, not held: see the lifecycle block),
+# Actions enabled with all actions allowed, and a workflow token that can
+# write and open pull requests.
 #
 # Only what is declared here is held. Description, homepage, topics,
 # rulesets and Actions variables are not (Actions variables arrive through
@@ -48,6 +49,20 @@ resource "github_repository" "this" {
 
   lifecycle {
     prevent_destroy = true
+
+    # GitHub returns a repository's merge options only to a caller with push
+    # access, and the infra-read App that plans has none, so it reads them
+    # as false or unset. They are set when a repository is created here and
+    # not held afterwards.
+    ignore_changes = [
+      allow_merge_commit,
+      allow_squash_merge,
+      allow_rebase_merge,
+      merge_commit_title,
+      merge_commit_message,
+      squash_merge_commit_title,
+      squash_merge_commit_message,
+    ]
   }
 }
 
