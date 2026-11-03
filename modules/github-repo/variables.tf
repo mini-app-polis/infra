@@ -36,3 +36,9 @@ variable "default_workflow_permissions" {
     error_message = "default_workflow_permissions is read or write."
   }
 }
+
+variable "protect_main" {
+  description = "Whether the repository carries the fleet's protect-main ruleset. A private repository cannot on the free plan."
+  type        = bool
+  default     = true
+}

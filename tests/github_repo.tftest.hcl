@@ -36,6 +36,11 @@ run "public_repo_has_the_fleet_shape" {
     condition     = github_workflow_repository_permissions.this.default_workflow_permissions == "write" && github_workflow_repository_permissions.this.can_approve_pull_request_reviews
     error_message = "Workflows can write and open pull requests by default."
   }
+
+  assert {
+    condition     = length(github_repository_ruleset.protect_main) == 1 && github_repository_ruleset.protect_main[0].rules[0].deletion && github_repository_ruleset.protect_main[0].rules[0].non_fast_forward
+    error_message = "A repository carries protect-main: no deletion and no force-push on the default branch."
+  }
 }
 
 run "private_repo_has_no_public_only_settings" {
@@ -46,9 +51,10 @@ run "private_repo_has_no_public_only_settings" {
   }
 
   variables {
-    name       = "example-private"
-    visibility = "private"
-    dev_branch = false
+    name         = "example-private"
+    visibility   = "private"
+    dev_branch   = false
+    protect_main = false
   }
 
   assert {

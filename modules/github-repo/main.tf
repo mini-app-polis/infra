@@ -4,9 +4,9 @@
 # Actions enabled with all actions allowed, and a workflow token that can
 # write and open pull requests.
 #
-# Only what is declared here is held. Description, homepage, topics,
-# rulesets and Actions variables are not (Actions variables arrive through
-# doppler/github.tf).
+# Only what is declared here is held. Description, homepage, topics, any
+# ruleset other than protect-main, and Actions variables are not (Actions
+# variables arrive through doppler/github.tf).
 
 resource "github_repository" "this" {
   name       = var.name
@@ -96,4 +96,28 @@ resource "github_workflow_repository_permissions" "this" {
   repository                       = github_repository.this.name
   default_workflow_permissions     = var.default_workflow_permissions
   can_approve_pull_request_reviews = true
+}
+
+# The fleet's protect-main ruleset: the default branch cannot be deleted
+# or force-pushed, and nobody bypasses that. A per-repository ruleset,
+# because organisation rulesets need GitHub Team.
+resource "github_repository_ruleset" "protect_main" {
+  count = var.protect_main ? 1 : 0
+
+  name        = "protect-main"
+  repository  = github_repository.this.name
+  target      = "branch"
+  enforcement = "active"
+
+  conditions {
+    ref_name {
+      include = ["~DEFAULT_BRANCH"]
+      exclude = []
+    }
+  }
+
+  rules {
+    deletion         = true
+    non_fast_forward = true
+  }
 }

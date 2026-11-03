@@ -473,7 +473,10 @@ through `modules/github-repo`, which holds the fleet's shape (public,
 main and dev, secret scanning and push protection, merge options, Actions
 and workflow-token permissions). A repository's entry lists only how it
 differs from that shape today; they were imported as they were, so the
-first apply changed nothing. Description, topics, rulesets and Actions
+first apply changed nothing. Each also carries the fleet's `protect-main`
+ruleset (no deletion or force-push of the default branch, no bypass), a
+per-repository ruleset because organisation rulesets need GitHub Team.
+Description, topics, other rulesets (infra's own `main`) and Actions
 variables are not managed here. Merge options are set when a repository
 is created but not held: GitHub shows them only to a caller with push
 access, which the read App deliberately lacks. The write App has push
