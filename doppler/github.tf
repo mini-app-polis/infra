@@ -152,6 +152,7 @@ locals {
         environment = "production"
         secrets = {
           CLOUDFLARE_API_TOKEN        = "prd.CLOUDFLARE_API_TOKEN"
+          INFRA_APPLY_API_KEY         = "prd.INFRA_APPLY_API_KEY"
           INFRA_WRITE_APP_CLIENT_ID   = "prd.INFRA_WRITE_APP_CLIENT_ID"
           INFRA_WRITE_APP_PRIVATE_KEY = "prd.INFRA_WRITE_APP_PRIVATE_KEY"
         }
