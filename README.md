@@ -468,6 +468,14 @@ key out of every job a pull request can start, the same split as the
 Cloudflare tokens. Neither App has a webhook. A permission is added to
 both Apps, at Read and Write, when a resource's plan first needs it.
 
+Every repository in the organisation is declared in `github_repos.tf`
+through `modules/github-repo`, which holds the fleet's shape (public,
+main and dev, secret scanning and push protection, merge options, Actions
+and workflow-token permissions). A repository's entry lists only how it
+differs from that shape today; they were imported as they were, so the
+first apply changed nothing. Description, topics, rulesets and Actions
+variables are not managed here.
+
 ## Why Terraform, not CloudFormation/SAM/CDK
 
 The first decision record for the fleet's AWS foundation (region, one
