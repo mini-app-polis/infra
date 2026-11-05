@@ -61,7 +61,6 @@ output "doppler_consumers" {
         module.wiki_curator,
         module.task_manager,
         module.task_refiner,
-        module.task_groomer,
         module.rotator,
         module.watcher,
       ] :
