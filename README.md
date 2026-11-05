@@ -486,6 +486,24 @@ differs from that shape; they were imported as they were, so the first
 apply changed nothing. A read-only default workflow token is a deliberate
 difference, kept where a repository's workflows ask for write themselves.
 
+**Renaming a repository.** Change its name in its block (a cog's
+`github_repo`, or its key in `github_repos.tf`) and add a `moved` block if
+the block's address changes; the repository is renamed in place. Its
+`dev` branch is not: `github_branch` is keyed on the repository's name, so
+the apply replaces it, recreated from `main`, and every commit on `dev`
+that `main` does not have leaves the remote (task-groomer-cog's rename,
+MINI-751). Before the apply, note `dev`'s head (`git rev-parse
+origin/dev` in a fresh fetch); after it, put that head back on top of
+`main` from a clone that still has it, with no force push:
+
+```bash
+git fetch origin
+git checkout dev
+git reset --hard <dev's head before the apply>
+git merge --no-edit origin/main
+git push origin dev
+```
+
 Description, topics, other rulesets (infra's own `main`) and Actions
 variables are not managed here. Merge options are set when a repository
 is created but not held: GitHub shows them only to a caller with push
