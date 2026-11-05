@@ -72,6 +72,13 @@ moved {
   to   = module.task_groomer.module.repository[0]
 }
 
+# task-groomer-cog renamed task-refiner-cog: the repository moves to the
+# refiner's block, and the new name renames it in place.
+moved {
+  from = module.task_groomer.module.repository[0]
+  to   = module.task_refiner.module.repository[0]
+}
+
 moved {
   from = module.github_repo["task-manager-cog"]
   to   = module.task_manager.module.repository[0]

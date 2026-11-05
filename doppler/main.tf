@@ -43,8 +43,8 @@ locals {
   # local entry point reads that the function never does, so they are in
   # neither its SSM names nor its prd config.
   worker_local_extras = {
-    # `python -m task_groomer_cog` reads the task, or the board, from Asana.
-    "task-groomer-cog" = {
+    # `python -m task_refiner_cog` reads the task, or the board, from Asana.
+    "task-refiner-cog" = {
       ASANA_ACCESS_TOKEN     = "ASANA_ACCESS_TOKEN"
       ASANA_INBOX_PROJECT_ID = "ASANA_INBOX_PROJECT_ID"
     }

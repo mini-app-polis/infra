@@ -324,9 +324,9 @@ module "task_manager" {
   reserved_concurrency = 1
   max_receive_count    = 3
 
-  # The grooming sweep, every half hour: every task waiting to be worked,
+  # The refining sweep, every half hour: every task waiting to be worked,
   # checked against the definition of ready. On the queue, so it never runs
-  # beside a job creating a task. At :15 and :45, so GROOM_TIMES and
+  # beside a job creating a task. At :15 and :45, so REFINE_TIMES and
   # AGENT_TIMES can name either half of an hour.
   schedules = {
     sweep = {
@@ -355,12 +355,23 @@ module "task_manager" {
     REFINING_SECTION       = "REFINING_SECTION"
     LOGGING_LEVEL          = "LOGGING_LEVEL"
     SENTRY_DSN_COGS        = "SENTRY_DSN_COGS"
-    # The leaf-or-compound check and applying a groomer's split: shapes off
-    # unless true; a split only reported unless GROOM_SPLIT_DRY_RUN is false.
+    # The leaf-or-compound check and applying a refiner's split: shapes off
+    # unless true; a split only reported unless REFINE_SPLIT_DRY_RUN is false.
     BLOCKED_SECTION          = "BLOCKED_SECTION"
     GROOM_SPLIT_DRY_RUN      = "GROOM_SPLIT_DRY_RUN"
     GROOM_SPLIT_MAX_CHILDREN = "GROOM_SPLIT_MAX_CHILDREN"
     GROOM_TASK_SHAPES        = "GROOM_TASK_SHAPES"
+    # The refining names of the GROOM_* settings, which task-manager-cog
+    # reads now, referencing the same vault values. The GROOM_* names stay
+    # for the release still running and go with the grooming names.
+    REFINE_AUTO_READY         = "GROOM_AUTO_READY"
+    REFINE_DISPATCH           = "GROOM_DISPATCH"
+    REFINE_DISPATCH_LIMIT     = "GROOM_DISPATCH_LIMIT"
+    REFINE_TIMES              = "GROOM_TIMES"
+    REFINE_SECTIONS           = "GROOM_SECTIONS"
+    REFINE_SPLIT_DRY_RUN      = "GROOM_SPLIT_DRY_RUN"
+    REFINE_SPLIT_MAX_CHILDREN = "GROOM_SPLIT_MAX_CHILDREN"
+    REFINE_TASK_SHAPES        = "GROOM_TASK_SHAPES"
     # Agent dispatch at the end of the sweep: off unless AGENT_DISPATCH is
     # true. The agent GitHub App only starts the caller workflow in a
     # target repository; its key is optional so the sweep runs without it.
@@ -461,8 +472,71 @@ module "watcher" {
   }
 }
 
+# task-refiner-cog: reads a task and the code it names, and proposes what it
+# should say. The repository was task-groomer-cog; it moves here from
+# module.task_groomer (github_repos.tf), which renames it.
+module "task_refiner" {
+  source = "./modules/cog-worker"
+
+  name                     = "task-refiner"
+  github_repo              = "mini-app-polis/task-refiner-cog"
+  github_oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
+  alert_email              = local.alert_email
+  api_base_url             = var.kaiano_api_base_url
+  non_settings_names       = local.non_settings_names
+
+  handler      = "task_refiner_cog.worker.lambda_handler"
+  architecture = "arm64"
+
+  # A job is one model run of up to 8 rounds, each a Messages request that
+  # can take tens of seconds, plus reading repositories as zipballs held in
+  # memory. The worker stops itself 20 s short of the timeout.
+  timeout_seconds = 600
+  memory_mb       = 1024
+
+  # A job is a paid run, and a redelivered job would pay again. Each message
+  # is delivered once: a run that fails is reported by the cog and the task
+  # waits for its next change. A crash outside the run goes straight to the
+  # dead-letter queue, whose alarm says so.
+  max_receive_count = 1
+
+  # A standard queue: refining one task does not wait on another. Two at a
+  # time keeps the hourly batch (at most 5) quick without bursting the
+  # model's rate limits. No reservation, so nothing is throttled into
+  # spending its one delivery.
+  max_concurrency = 2
+
+  # Reads its own Doppler project, task-refiner-cog (README.md, "Doppler
+  # layout"); the names below say which vault value each one references.
+  # The REFINER_* settings still reference the vault's GROOMER_* values,
+  # which keep their names until the grooming names are removed.
+  ssm_parameters = {
+    ANTHROPIC_API_KEY        = "ANTHROPIC_API_KEY"
+    TASK_REFINER_COG_API_KEY = "TASK_REFINER_COG_API_KEY"
+  }
+  ssm_optional_parameters = {
+    GITHUB_TOKEN              = "GITHUB_DASHBOARD_TOKEN"
+    REFINER_MODEL             = "GROOMER_MODEL"
+    REFINER_MAX_ROUNDS        = "GROOMER_MAX_ROUNDS"
+    REFINER_MAX_INPUT_TOKENS  = "GROOMER_MAX_INPUT_TOKENS"
+    REFINER_MAX_OUTPUT_TOKENS = "GROOMER_MAX_OUTPUT_TOKENS"
+    REFINER_MONTHLY_CAP_USD   = "GROOMER_MONTHLY_CAP_USD"
+    LOGGING_LEVEL             = "LOGGING_LEVEL"
+    SENTRY_DSN_COGS           = "SENTRY_DSN_COGS"
+    # Splitting a task into children: off unless true.
+    REFINER_SPLIT = "GROOMER_SPLIT"
+  }
+}
+
+# The groomer's function, queue and Doppler project, still running the last
+# grooming release while any cog sends to task-groomer-jobs. Its repository is
+# task-refiner-cog's now (module.task_refiner). Removed with the grooming
+# names, once every cog has moved to refining.
 module "task_groomer" {
   source = "./modules/cog-worker"
+
+  create_repository    = false
+  github_repository_id = module.task_refiner.repository_id
 
   name                     = "task-groomer"
   github_repo              = "mini-app-polis/task-groomer-cog"
