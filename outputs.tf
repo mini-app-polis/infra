@@ -12,7 +12,7 @@ output "cogs" {
       transcription  = module.transcription
       "wiki-curator" = module.wiki_curator
       "task-manager" = module.task_manager
-      "task-groomer" = module.task_groomer
+      "task-refiner" = module.task_refiner
       rotator        = module.rotator
     } :
     name => {
@@ -60,6 +60,7 @@ output "doppler_consumers" {
         module.transcription,
         module.wiki_curator,
         module.task_manager,
+        module.task_refiner,
         module.task_groomer,
         module.rotator,
         module.watcher,
