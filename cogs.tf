@@ -420,10 +420,20 @@ module "watcher" {
   # deejay-cog's settings; it does nothing until LIBRARY_BACKFILL_MODE is
   # set). 10:41 UTC is the small hours in the US, clear of drift at 09:17.
   # The job name is watcher-cog's JOBS key; an unknown one fails loudly.
+  #
+  # The API's quiet sweep of its own faults, hourly: watcher-cog's jobs.py
+  # calls POST /v1/signals/api-faults/quiet-sweep, which closes each 502,
+  # 503 or 504 Issue whose route has gone SIGNAL_FAULT_QUIET_HOURS (the
+  # API's setting, 24) without the fault. Hourly, so an Issue closes within
+  # the hour after its quiet day; a 500's Issue is never closed by it.
   cron_jobs = {
     "library-backfill" = {
       schedule_expression = "cron(41 10 * * ? *)"
       event               = { job = "library-backfill" }
+    }
+    "api-fault-quiet-sweep" = {
+      schedule_expression = "cron(23 * * * ? *)"
+      event               = { job = "api-fault-quiet-sweep" }
     }
   }
 
