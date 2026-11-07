@@ -78,10 +78,12 @@ module "deejay" {
   handler      = "deejay_cog.worker.lambda_handler"
   architecture = "x86_64"
 
-  # The slowest run in four weeks was about 34s. A failing job holds the
-  # FIFO queue for up to max_receive_count x (timeout + 60s), so this is
-  # kept near what runs take rather than at Lambda's 900s ceiling.
-  timeout_seconds = 300
+  # The nightly library run (scan, trash, identify, backfill chunk,
+  # reconcile, sync, duplicate report) takes about 2m 40s with a 50-file
+  # backfill chunk; 600s leaves room for larger chunks. A failing job holds
+  # the FIFO queue for up to max_receive_count x (timeout + 60s), about 33
+  # minutes here, so this stays below Lambda's 900s ceiling.
+  timeout_seconds = 600
   memory_mb       = 1024
 
   # Serialised: two sweeps of one Drive folder race to upload and archive
