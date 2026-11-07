@@ -431,11 +431,12 @@ module "watcher" {
     name => { watcher = name }
   }
 
-  # deejay-cog's library backfill, once a night: watcher-cog's jobs.py asks
-  # the API for one library-backfill run, and deejay-cog retags the next
-  # chunk of the library (the chunk size and whether it writes at all are
-  # deejay-cog's settings; it does nothing until LIBRARY_BACKFILL_MODE is
-  # set). 10:41 UTC is the small hours in the US, clear of drift at 09:17.
+  # deejay-cog's nightly library run, hourly while the backfill links the
+  # whole library (about 20 files a run): watcher-cog's jobs.py asks the API
+  # for one library-backfill run, and deejay-cog runs its library steps (the
+  # chunk size and each step's mode are deejay-cog's settings). Back to once
+  # a night, cron(41 10 * * ? *), when the backfill reports the library
+  # done. Minute 41 keeps clear of drift at 09:17 and the sweep at :23.
   # The job name is watcher-cog's JOBS key; an unknown one fails loudly.
   #
   # The API's quiet sweep of its own faults, hourly: watcher-cog's jobs.py
@@ -445,7 +446,7 @@ module "watcher" {
   # the hour after its quiet day; a 500's Issue is never closed by it.
   cron_jobs = {
     "library-backfill" = {
-      schedule_expression = "cron(41 10 * * ? *)"
+      schedule_expression = "cron(41 * * * ? *)"
       event               = { job = "library-backfill" }
     }
     "api-fault-quiet-sweep" = {
