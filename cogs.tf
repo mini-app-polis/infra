@@ -111,15 +111,18 @@ module "deejay" {
     }
   }
 
-  # The new-music intake's and the library backfill's, scan's and
-  # reconcile's modes (off unless set) and folders, the backfill's and the
-  # reconcile's chunks, the backfill's skip list, the scan's listing budget,
+  # The new-music intake's and the library scan's, identify step's,
+  # backfill's and reconcile's modes (off unless set) and folders, the
+  # identify, backfill and reconcile chunks, the backfill's skip list, the
+  # scan's listing budget,
   # and where every music flow keeps its run records (deejay-cog ADR-0007,
   # ADR-0008).
   ssm_optional_parameters = {
     LIBRARY_BACKFILL_CHUNK_SIZE     = "LIBRARY_BACKFILL_CHUNK_SIZE"
     LIBRARY_BACKFILL_MODE           = "LIBRARY_BACKFILL_MODE"
     LIBRARY_BACKFILL_SKIP_FILE_IDS  = "LIBRARY_BACKFILL_SKIP_FILE_IDS"
+    LIBRARY_IDENTIFY_CHUNK_SIZE     = "LIBRARY_IDENTIFY_CHUNK_SIZE"
+    LIBRARY_IDENTIFY_MODE           = "LIBRARY_IDENTIFY_MODE"
     LIBRARY_RECONCILE_CHUNK_SIZE    = "LIBRARY_RECONCILE_CHUNK_SIZE"
     LIBRARY_RECONCILE_MODE          = "LIBRARY_RECONCILE_MODE"
     LIBRARY_ROOT_FOLDER_ID          = "LIBRARY_ROOT_FOLDER_ID"
@@ -185,6 +188,7 @@ module "deejay_fingerprint" {
   # It finishes the new-music intake for the files it identifies, so it
   # reads the same mode and folders as the deejay worker.
   ssm_optional_parameters = {
+    LIBRARY_IDENTIFY_MODE           = "LIBRARY_IDENTIFY_MODE"
     LOGGING_LEVEL                   = "LOGGING_LEVEL"
     MUSIC_TAGGING_STATE_FOLDER_ID   = "MUSIC_TAGGING_STATE_FOLDER_ID"
     NEW_MUSIC_DESTINATION_FOLDER_ID = "NEW_MUSIC_DESTINATION_FOLDER_ID"
