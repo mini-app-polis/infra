@@ -111,14 +111,17 @@ module "deejay" {
     }
   }
 
-  # The new-music intake's and the library backfill's modes (off unless
-  # set) and folders, the backfill's chunk and skip list, and where every
-  # music flow keeps its run records (deejay-cog ADR-0007).
+  # The new-music intake's, the library backfill's and the library scan's
+  # modes (off unless set) and folders, the backfill's chunk and skip list,
+  # the scan's listing budget, and where every music flow keeps its run
+  # records (deejay-cog ADR-0007, ADR-0008).
   ssm_optional_parameters = {
     LIBRARY_BACKFILL_CHUNK_SIZE     = "LIBRARY_BACKFILL_CHUNK_SIZE"
     LIBRARY_BACKFILL_MODE           = "LIBRARY_BACKFILL_MODE"
     LIBRARY_BACKFILL_SKIP_FILE_IDS  = "LIBRARY_BACKFILL_SKIP_FILE_IDS"
     LIBRARY_ROOT_FOLDER_ID          = "LIBRARY_ROOT_FOLDER_ID"
+    LIBRARY_SCAN_LISTING_SECONDS    = "LIBRARY_SCAN_LISTING_SECONDS"
+    LIBRARY_SCAN_MODE               = "LIBRARY_SCAN_MODE"
     LOGGING_LEVEL                   = "LOGGING_LEVEL"
     MUSIC_TAGGING_STATE_FOLDER_ID   = "MUSIC_TAGGING_STATE_FOLDER_ID"
     NEW_MUSIC_DESTINATION_FOLDER_ID = "NEW_MUSIC_DESTINATION_FOLDER_ID"
