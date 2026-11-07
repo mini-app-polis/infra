@@ -112,9 +112,9 @@ module "deejay" {
   }
 
   # The new-music intake's and the library scan's, identify step's,
-  # backfill's and reconcile's modes (off unless set) and folders, the
-  # identify, backfill and reconcile chunks, the backfill's skip list, the
-  # scan's listing budget,
+  # backfill's, reconcile's and sync's modes (off unless set) and folders,
+  # the identify, backfill, reconcile and sync chunks, the backfill's skip
+  # list, the scan's listing budget,
   # and where every music flow keeps its run records (deejay-cog ADR-0007,
   # ADR-0008).
   ssm_optional_parameters = {
@@ -128,6 +128,8 @@ module "deejay" {
     LIBRARY_ROOT_FOLDER_ID          = "LIBRARY_ROOT_FOLDER_ID"
     LIBRARY_SCAN_LISTING_SECONDS    = "LIBRARY_SCAN_LISTING_SECONDS"
     LIBRARY_SCAN_MODE               = "LIBRARY_SCAN_MODE"
+    LIBRARY_SYNC_CHUNK_SIZE         = "LIBRARY_SYNC_CHUNK_SIZE"
+    LIBRARY_SYNC_MODE               = "LIBRARY_SYNC_MODE"
     LOGGING_LEVEL                   = "LOGGING_LEVEL"
     MUSIC_TAGGING_STATE_FOLDER_ID   = "MUSIC_TAGGING_STATE_FOLDER_ID"
     NEW_MUSIC_DESTINATION_FOLDER_ID = "NEW_MUSIC_DESTINATION_FOLDER_ID"
