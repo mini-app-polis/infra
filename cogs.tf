@@ -111,8 +111,9 @@ module "deejay" {
     }
   }
 
-  # The new-music intake's and the library scan's, identify step's,
-  # backfill's, reconcile's and sync's modes (off unless set) and folders,
+  # The new-music intake's and the library scan's, trash step's, identify
+  # step's, backfill's, reconcile's, sync's and duplicate report's modes
+  # (off unless set) and folders,
   # the identify, backfill, reconcile and sync chunks, the backfill's skip
   # list, the scan's listing budget,
   # and where every music flow keeps its run records (deejay-cog ADR-0007,
@@ -121,6 +122,7 @@ module "deejay" {
     LIBRARY_BACKFILL_CHUNK_SIZE     = "LIBRARY_BACKFILL_CHUNK_SIZE"
     LIBRARY_BACKFILL_MODE           = "LIBRARY_BACKFILL_MODE"
     LIBRARY_BACKFILL_SKIP_FILE_IDS  = "LIBRARY_BACKFILL_SKIP_FILE_IDS"
+    LIBRARY_DUPLICATES_MODE         = "LIBRARY_DUPLICATES_MODE"
     LIBRARY_IDENTIFY_CHUNK_SIZE     = "LIBRARY_IDENTIFY_CHUNK_SIZE"
     LIBRARY_IDENTIFY_MODE           = "LIBRARY_IDENTIFY_MODE"
     LIBRARY_RECONCILE_CHUNK_SIZE    = "LIBRARY_RECONCILE_CHUNK_SIZE"
@@ -130,6 +132,7 @@ module "deejay" {
     LIBRARY_SCAN_MODE               = "LIBRARY_SCAN_MODE"
     LIBRARY_SYNC_CHUNK_SIZE         = "LIBRARY_SYNC_CHUNK_SIZE"
     LIBRARY_SYNC_MODE               = "LIBRARY_SYNC_MODE"
+    LIBRARY_TRASH_MODE              = "LIBRARY_TRASH_MODE"
     LOGGING_LEVEL                   = "LOGGING_LEVEL"
     MUSIC_TAGGING_STATE_FOLDER_ID   = "MUSIC_TAGGING_STATE_FOLDER_ID"
     NEW_MUSIC_DESTINATION_FOLDER_ID = "NEW_MUSIC_DESTINATION_FOLDER_ID"
