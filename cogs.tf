@@ -439,6 +439,11 @@ module "watcher" {
   # done. Minute 41 keeps clear of drift at 09:17 and the sweep at :23.
   # The job name is watcher-cog's JOBS key; an unknown one fails loudly.
   #
+  # deejay-cog's library reconcile, on its own schedule rather than inside
+  # the backfill's run, so a write run has the worker's whole timeout: hourly
+  # at minute 11, half an hour from the backfill (the deejay queue runs one
+  # message at a time). Its chunk and mode are deejay-cog's settings.
+  #
   # The API's quiet sweep of its own faults, hourly: watcher-cog's jobs.py
   # calls POST /v1/signals/api-faults/quiet-sweep, which closes each 502,
   # 503 or 504 Issue whose route has gone SIGNAL_FAULT_QUIET_HOURS (the
@@ -448,6 +453,10 @@ module "watcher" {
     "library-backfill" = {
       schedule_expression = "cron(41 * * * ? *)"
       event               = { job = "library-backfill" }
+    }
+    "library-reconcile" = {
+      schedule_expression = "cron(11 * * * ? *)"
+      event               = { job = "library-reconcile" }
     }
     "api-fault-quiet-sweep" = {
       schedule_expression = "cron(23 * * * ? *)"
