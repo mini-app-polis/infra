@@ -82,9 +82,11 @@ module "deejay" {
   # reconcile, sync, duplicate report) takes about 2m 40s with a 50-file
   # backfill chunk; 600s leaves room for larger chunks. A failing job holds
   # the FIFO queue for up to max_receive_count x (timeout + 60s), about 33
-  # minutes here, so this stays below Lambda's 900s ceiling.
+  # minutes here, so this stays below Lambda's 900s ceiling. 2048 MB: a
+  # new-music run of 25 files ran out of memory at 1024 MB, in a container
+  # that had already run the library jobs.
   timeout_seconds = 600
-  memory_mb       = 1024
+  memory_mb       = 2048
 
   # Serialised: two sweeps of one Drive folder race to upload and archive
   # the same files. FIFO with one message group, so jobs queue without
