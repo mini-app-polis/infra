@@ -91,6 +91,18 @@ class TaskRequest(unittest.TestCase):
         self.assertNotIn("secret@example.com", json.dumps(body))
 
 
+class Post(unittest.TestCase):
+    def test_names_itself_to_the_edge(self) -> None:
+        response = mock.MagicMock()
+        response.__enter__.return_value.status = 202
+        with mock.patch.object(fsc.urllib.request, "urlopen", return_value=response) as urlopen:
+            status = fsc.post("https://api.example.com/", "k", {"a": 1})
+        self.assertEqual(status, "202")
+        request = urlopen.call_args.args[0]
+        self.assertEqual(request.full_url, "https://api.example.com/v1/tasks")
+        self.assertEqual(request.get_header("User-agent"), fsc.USER_AGENT)
+
+
 class Main(unittest.TestCase):
     def test_posts_once_per_new_subscription(self) -> None:
         with mock.patch.object(fsc, "post", return_value="201") as post:

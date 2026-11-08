@@ -34,6 +34,11 @@ from pathlib import Path
 SOURCE = "infra-apply"
 RESOURCE_TYPE = "aws_sns_topic_subscription"
 
+#: Identifies this client to the API's edge. Not cosmetic: the API sits
+#: behind Cloudflare, whose Browser Integrity Check refuses urllib's default
+#: User-Agent with a 1010 that never reaches the API.
+USER_AGENT = "infra-apply/1 (+https://github.com/mini-app-polis/infra)"
+
 
 def created_subscriptions(plan: dict) -> list[str]:
     """Addresses of the email subscriptions the plan creates."""
@@ -101,6 +106,7 @@ def post(api_url: str, api_key: str, body: dict) -> str:
         headers={
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
+            "User-Agent": USER_AGENT,
         },
         method="POST",
     )
