@@ -103,7 +103,10 @@ in Doppler), pass it `non_settings_names = local.non_settings_names` (see
 cog's repository (`modules/github-repo`), `doppler/github.tf` gives it its
 deploy variables (when `doppler/` is next applied, above), and the apply job files a board task to confirm the new
 alert subscription email (`scripts/file_sns_confirmations.py`): that click is
-the one step left to a person.
+the one step left to a person. That script's call to `POST /v1/tasks` is
+checked against the development API by a read-only contract suite
+(`tests/contract`, run by `contract.yml` on every push to dev and every dev
+API deploy).
 
 ## Lambda layers
 

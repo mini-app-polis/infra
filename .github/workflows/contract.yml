@@ -1,0 +1,57 @@
+name: Contract
+
+# The live contract suite (tests/contract): the one outbound call this repo
+# makes to a fleet API — scripts/file_sns_confirmations.py's POST /v1/tasks
+# on api-kaianolevine-com, after a production apply — checked against the
+# development API (TEST-016, ADR-0012). That call never fails the apply, so
+# drift would only show as a warning in an apply log. This finds it on dev.
+#
+# Read-only — see tests/contract/test_tasks_contract.py. Its one post is
+# refused by authentication before the handler, so nothing is queued; it
+# refuses any production host, and does not share the contract-dev-kaiano-api
+# concurrency group with the suites that write (CD-033).
+#
+# Configuration:
+#   - repository variable CONTRACT_API_URL (optional). Defaults to
+#     https://dev-api.kaianolevine.com.
+#
+# When it runs — whenever either side of the contract changes:
+#   - a push to dev here: the script may have changed;
+#   - `dev-api-deployed`: api-kaianolevine-com's deployed workflow sends this
+#     once Railway reports a successful dev deploy;
+#   - by hand.
+# A repository_dispatch always runs this file from main, so that run checks
+# out dev explicitly: it is dev's script that should meet dev's API.
+
+on:
+  push:
+    branches: [dev]
+  repository_dispatch:
+    types: [dev-api-deployed]
+  workflow_dispatch:
+
+concurrency:
+  group: contract-infra
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CONTRACT_API_URL: ${{ vars.CONTRACT_API_URL || 'https://dev-api.kaianolevine.com' }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event_name == 'repository_dispatch' && 'dev' || '' }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Run the task contract suite
+        run: python3 -m unittest discover -s tests/contract -v
