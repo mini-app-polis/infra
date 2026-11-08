@@ -60,7 +60,7 @@ variable "architecture" {
 variable "runtime" {
   description = "Must match the deploy job's `python-version`."
   type        = string
-  default     = "python3.11"
+  default     = "python3.14"
 }
 
 variable "timeout_seconds" {
