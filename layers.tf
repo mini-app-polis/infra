@@ -22,6 +22,6 @@ resource "aws_lambda_layer_version" "fpcalc" {
   # does not publish a new version; a new binary does.
   source_code_hash = filebase64sha256("${path.root}/build/fpcalc-layer/bin/fpcalc")
 
-  compatible_runtimes      = ["python3.11"]
+  compatible_runtimes      = ["python3.14"]
   compatible_architectures = ["x86_64"]
 }
