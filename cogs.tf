@@ -433,18 +433,20 @@ module "watcher" {
     name => { watcher = name }
   }
 
-  # deejay-cog's nightly library run, hourly while the backfill links the
-  # whole library (about 20 files a run): watcher-cog's jobs.py asks the API
-  # for one library-backfill run, and deejay-cog runs its library steps (the
-  # chunk size and each step's mode are deejay-cog's settings). Back to once
-  # a night, cron(41 10 * * ? *), when the backfill reports the library
-  # done. Minute 41 keeps clear of drift at 09:17 and the sweep at :23.
+  # deejay-cog's nightly library run, three times an hour while the backfill
+  # links the whole library (about 30 files a run): watcher-cog's jobs.py
+  # asks the API for one library-backfill run, and deejay-cog runs its
+  # library steps (the chunk size and each step's mode are deejay-cog's
+  # settings). Back to once a night, cron(41 10 * * ? *), when the backfill
+  # reports the library done. Minute 41 keeps clear of drift at 09:17 and
+  # the sweep at :23.
   # The job name is watcher-cog's JOBS key; an unknown one fails loudly.
   #
   # deejay-cog's library reconcile, on its own schedule rather than inside
-  # the backfill's run, so a write run has the worker's whole timeout: hourly
-  # at minute 11, half an hour from the backfill (the deejay queue runs one
-  # message at a time). Its chunk and mode are deejay-cog's settings.
+  # the backfill's run, so a write run has the worker's whole timeout: three
+  # times an hour at minutes 11, 31 and 51, ten minutes after each backfill
+  # (the deejay queue runs one message at a time), to keep up with the
+  # backfill. Its chunk and mode are deejay-cog's settings.
   #
   # The API's quiet sweep of its own faults, hourly: watcher-cog's jobs.py
   # calls POST /v1/signals/api-faults/quiet-sweep, which closes each 502,
@@ -453,11 +455,11 @@ module "watcher" {
   # the hour after its quiet day; a 500's Issue is never closed by it.
   cron_jobs = {
     "library-backfill" = {
-      schedule_expression = "cron(41 * * * ? *)"
+      schedule_expression = "cron(1,21,41 * * * ? *)"
       event               = { job = "library-backfill" }
     }
     "library-reconcile" = {
-      schedule_expression = "cron(11 * * * ? *)"
+      schedule_expression = "cron(11,31,51 * * * ? *)"
       event               = { job = "library-reconcile" }
     }
     "api-fault-quiet-sweep" = {
