@@ -10,6 +10,7 @@ locals {
     "www.dancegeekproductions.art CNAME"            = { zone = "dancegeekproductions.art", type = "CNAME", name = "www.dancegeekproductions.art", content = "dance-geek-productions-website.pages.dev", proxied = true, ttl = 1, priority = null }
 
     # deejaytools.com
+    "_dmarc.deejaytools.com TXT"                     = { zone = "deejaytools.com", type = "TXT", name = "_dmarc.deejaytools.com", content = "\"v=DMARC1; p=none;\"", proxied = false, ttl = 1, priority = null }
     "_railway-verify.api-dev.deejaytools.com TXT"    = { zone = "deejaytools.com", type = "TXT", name = "_railway-verify.api-dev.deejaytools.com", content = "\"railway-verify=331aa28444c94b6aa6552fd5a984fb54132d9c3f826464aaf69d06ff5d8db29e\"", proxied = false, ttl = 3600, priority = null }
     "_railway-verify.api-dev.deejaytools.com TXT #2" = { zone = "deejaytools.com", type = "TXT", name = "_railway-verify.api-dev.deejaytools.com", content = "\"railway-verify=6323cb3a203955da5d469951390c609a2903f23604208d458d733b6ce9be9b52\"", proxied = false, ttl = 3600, priority = null }
     "_railway-verify.api.deejaytools.com TXT"        = { zone = "deejaytools.com", type = "TXT", name = "_railway-verify.api.deejaytools.com", content = "\"railway-verify=de51a015a616d9948b5b043c86ac34b1c48f4f7116d6bebcef7b2c697a3a198b\"", proxied = false, ttl = 3600, priority = null }
