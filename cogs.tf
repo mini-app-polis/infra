@@ -188,6 +188,13 @@ module "deejay_fingerprint" {
   reserved_concurrency = 1
   max_receive_count    = 3
 
+  # The Spotify client of its second opinion refuses to start without a
+  # redirect URI, though a refresh-token client never redirects; the deejay
+  # worker's value.
+  environment = {
+    SPOTIPY_REDIRECT_URI = "http://127.0.0.1:8888/callback"
+  }
+
   # Reads deejay-cog's own Doppler project, like the deejay worker.
   ssm_parameters = {
     ACOUSTID_API_KEY        = "ACOUSTID_API_KEY"
