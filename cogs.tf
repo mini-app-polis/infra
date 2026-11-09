@@ -195,7 +195,9 @@ module "deejay_fingerprint" {
     GOOGLE_CREDENTIALS_JSON = "GOOGLE_CREDENTIALS_JSON"
   }
   # It finishes the new-music intake for the files it identifies, so it
-  # reads the same mode and folders as the deejay worker.
+  # reads the same mode and folders as the deejay worker. Spotify's search is
+  # its second opinion when a library file's fingerprint and tags disagree
+  # (deejay-cog ADR-0008), with the deejay worker's Spotify credentials.
   ssm_optional_parameters = {
     LIBRARY_IDENTIFY_MODE           = "LIBRARY_IDENTIFY_MODE"
     LOGGING_LEVEL                   = "LOGGING_LEVEL"
@@ -207,6 +209,9 @@ module "deejay_fingerprint" {
     NEW_MUSIC_REVIEW_FOLDER_ID      = "NEW_MUSIC_REVIEW_FOLDER_ID"
     RETAG_MIN_CONFIDENCE            = "RETAG_MIN_CONFIDENCE"
     SENTRY_DSN_COGS                 = "SENTRY_DSN_COGS"
+    SPOTIPY_CLIENT_ID               = "SPOTIPY_CLIENT_ID"
+    SPOTIPY_CLIENT_SECRET           = "SPOTIPY_CLIENT_SECRET"
+    SPOTIPY_REFRESH_TOKEN           = "SPOTIPY_REFRESH_TOKEN"
   }
 }
 
