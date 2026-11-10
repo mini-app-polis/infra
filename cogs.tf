@@ -121,34 +121,24 @@ module "deejay" {
     }
   }
 
-  # The new-music intake's and the library scan's, trash step's, identify
-  # step's, backfill's, reconcile's, sync's and duplicate report's modes
-  # (off unless set) and folders,
-  # the identify, backfill, reconcile and sync chunks, the backfill's skip
-  # list, the scan's listing budget,
-  # and where every music flow keeps its run records (deejay-cog ADR-0007,
-  # ADR-0008).
+  # The new-music intake's and the library's folders, the identify,
+  # backfill, reconcile and sync chunks, the backfill's skip list, the
+  # scan's listing budget, and where every music flow keeps its run records
+  # (deejay-cog ADR-0007, ADR-0008). The steps' modes are the API's feature
+  # flags, not settings (deejay-cog ADR-0008).
   ssm_optional_parameters = {
     LIBRARY_BACKFILL_CHUNK_SIZE     = "LIBRARY_BACKFILL_CHUNK_SIZE"
-    LIBRARY_BACKFILL_MODE           = "LIBRARY_BACKFILL_MODE"
     LIBRARY_BACKFILL_SKIP_FILE_IDS  = "LIBRARY_BACKFILL_SKIP_FILE_IDS"
-    LIBRARY_DUPLICATES_MODE         = "LIBRARY_DUPLICATES_MODE"
     LIBRARY_IDENTIFY_CHUNK_SIZE     = "LIBRARY_IDENTIFY_CHUNK_SIZE"
-    LIBRARY_IDENTIFY_MODE           = "LIBRARY_IDENTIFY_MODE"
     LIBRARY_RECONCILE_CHUNK_SIZE    = "LIBRARY_RECONCILE_CHUNK_SIZE"
-    LIBRARY_RECONCILE_MODE          = "LIBRARY_RECONCILE_MODE"
     LIBRARY_ROOT_FOLDER_ID          = "LIBRARY_ROOT_FOLDER_ID"
     LIBRARY_SCAN_LISTING_SECONDS    = "LIBRARY_SCAN_LISTING_SECONDS"
-    LIBRARY_SCAN_MODE               = "LIBRARY_SCAN_MODE"
     LIBRARY_SYNC_CHUNK_SIZE         = "LIBRARY_SYNC_CHUNK_SIZE"
-    LIBRARY_SYNC_MODE               = "LIBRARY_SYNC_MODE"
-    LIBRARY_TRASH_MODE              = "LIBRARY_TRASH_MODE"
     LOGGING_LEVEL                   = "LOGGING_LEVEL"
     MUSIC_TAGGING_STATE_FOLDER_ID   = "MUSIC_TAGGING_STATE_FOLDER_ID"
     NEW_MUSIC_DESTINATION_FOLDER_ID = "NEW_MUSIC_DESTINATION_FOLDER_ID"
     NEW_MUSIC_INPUT_FOLDER_ID       = "NEW_MUSIC_INPUT_FOLDER_ID"
     NEW_MUSIC_MAX_FILES_PER_RUN     = "NEW_MUSIC_MAX_FILES_PER_RUN"
-    NEW_MUSIC_MODE                  = "NEW_MUSIC_MODE"
     NEW_MUSIC_ORIGINALS_FOLDER_ID   = "NEW_MUSIC_ORIGINALS_FOLDER_ID"
     NEW_MUSIC_REVIEW_FOLDER_ID      = "NEW_MUSIC_REVIEW_FOLDER_ID"
     SENTRY_DSN_COGS                 = "SENTRY_DSN_COGS"
@@ -213,16 +203,15 @@ module "deejay_fingerprint" {
     GOOGLE_CREDENTIALS_JSON = "GOOGLE_CREDENTIALS_JSON"
   }
   # It finishes the new-music intake for the files it identifies, so it
-  # reads the same mode and folders as the deejay worker. Spotify's search is
-  # its second opinion when a library file's fingerprint and tags disagree
-  # (deejay-cog ADR-0008), with the deejay worker's Spotify credentials.
+  # reads the same folders as the deejay worker (its modes are the API's
+  # feature flags). Spotify's search is its second opinion when a library
+  # file's fingerprint and tags disagree (deejay-cog ADR-0008), with the
+  # deejay worker's Spotify credentials.
   ssm_optional_parameters = {
-    LIBRARY_IDENTIFY_MODE           = "LIBRARY_IDENTIFY_MODE"
     LOGGING_LEVEL                   = "LOGGING_LEVEL"
     MUSIC_TAGGING_STATE_FOLDER_ID   = "MUSIC_TAGGING_STATE_FOLDER_ID"
     NEW_MUSIC_DESTINATION_FOLDER_ID = "NEW_MUSIC_DESTINATION_FOLDER_ID"
     NEW_MUSIC_INPUT_FOLDER_ID       = "NEW_MUSIC_INPUT_FOLDER_ID"
-    NEW_MUSIC_MODE                  = "NEW_MUSIC_MODE"
     NEW_MUSIC_ORIGINALS_FOLDER_ID   = "NEW_MUSIC_ORIGINALS_FOLDER_ID"
     NEW_MUSIC_REVIEW_FOLDER_ID      = "NEW_MUSIC_REVIEW_FOLDER_ID"
     RETAG_MIN_CONFIDENCE            = "RETAG_MIN_CONFIDENCE"
