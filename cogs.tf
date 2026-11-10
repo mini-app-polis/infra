@@ -88,6 +88,12 @@ module "deejay" {
   timeout_seconds = 600
   memory_mb       = 2048
 
+  # The library jobs fill the run: the worker stops each one a margin
+  # before the timeout, so any run with a full backlog lands past the
+  # default 80%. The alarm sits past that stop instead, firing only on a job
+  # that overran its own deadline.
+  duration_alarm_ratio = 0.97
+
   # Serialised: two sweeps of one Drive folder race to upload and archive
   # the same files. FIFO with one message group, so jobs queue without
   # being throttled; 3 receives is then three real failures.
@@ -181,6 +187,11 @@ module "deejay_fingerprint" {
 
   timeout_seconds = 300
   memory_mb       = 1024
+
+  # Identify fingerprints as many files as the run allows and stops a
+  # margin before the timeout; the alarm sits past that stop, as the
+  # deejay worker's does.
+  duration_alarm_ratio = 0.97
 
   # One at a time, for AcoustID's rate limit. FIFO with one message group,
   # as the deejay worker is, so files queue without being throttled.
