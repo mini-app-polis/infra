@@ -60,8 +60,9 @@ resource "aws_sqs_queue" "jobs" {
   name       = "${var.name}-jobs${local.queue_suffix}"
   fifo_queue = var.fifo
 
-  # The producer sends no deduplication id: an identical body within five
-  # minutes is one job, which the API's dispatch claims already make true.
+  # The producer sends its own deduplication id with every message, which
+  # takes precedence over this; it sets how long a repeated request is
+  # collapsed. Content-based stays on as the fallback for a send without one.
   content_based_deduplication = var.fifo ? true : null
 
   # Must exceed the function timeout, or SQS redelivers a job that is still
