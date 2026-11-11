@@ -108,6 +108,14 @@ checked against the development API by a read-only contract suite
 (`tests/contract`, run by `contract.yml` on every push to dev and every dev
 API deploy).
 
+A second function for an existing cog is another block with the same
+`github_repo`, `create_repository = false` and the holding block's
+`repository_id`, as deejay-cog's fingerprint and library functions are. Each
+gets its own queue, so a long job on one holds up nothing on another, its own
+output in `outputs.tf`, and its own pair of deploy variables in
+`doppler/github.tf`, which deploy it from the cog's CI. The API derives the
+queue's name from the block's `name`, as for every cog.
+
 ## Lambda layers
 
 `layers.tf` holds the native binaries a function needs and its Python package
