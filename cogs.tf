@@ -223,6 +223,94 @@ module "deejay_fingerprint" {
   }
 }
 
+# deejay-cog's third function: the library modes (every library-* mode), on
+# a queue of their own. A library run works until its deadline when it has
+# a backlog, and on the deejay worker's FIFO queue a run that kept failing
+# held every job behind it, live-play ingest included, for half an hour.
+# Here a library run waits only on another library run. It runs from
+# deejay-cog's package, deployed through its own role; its handler accepts
+# library-* modes alone, so any other mode fails and is dead-lettered
+# rather than run. The API derives this queue's name from the cog name
+# deejay-library, as for every cog (job_queue.queue_name).
+module "deejay_library" {
+  source = "./modules/cog-worker"
+
+  # deejay-cog's repository is held by module.deejay.
+  create_repository    = false
+  github_repository_id = module.deejay.repository_id
+
+  name                     = "deejay-library"
+  github_repo              = "mini-app-polis/deejay-cog"
+  github_oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
+  alert_email              = local.alert_email
+  api_base_url             = var.kaiano_api_base_url
+  non_settings_names       = local.non_settings_names
+
+  # The handler module is deejay-cog's to build. x86_64, like the deejay
+  # worker, for the same compiled wheels.
+  handler      = "deejay_cog.library_worker.lambda_handler"
+  architecture = "x86_64"
+
+  # Lambda's ceiling: a library step with a backlog works until the
+  # worker's deadline and carries on in the next run, so a longer run is
+  # fewer runs. A failing job holds this queue for up to
+  # max_receive_count x (timeout + 60s), 48 minutes, and holds nothing
+  # else. 2048 MB, as the deejay worker.
+  timeout_seconds = 900
+  memory_mb       = 2048
+
+  # Every run with a full backlog stops a margin before the timeout, so
+  # the alarm sits past that stop, as the deejay worker's does.
+  duration_alarm_ratio = 0.97
+
+  # Serialised, as the deejay worker: two library runs over one Drive
+  # library race each other. FIFO with one message group, so runs queue
+  # without being throttled; 3 receives is then three real failures.
+  fifo                 = true
+  reserved_concurrency = 1
+  max_receive_count    = 3
+
+  environment = {
+    SPOTIPY_REDIRECT_URI = "http://127.0.0.1:8888/callback"
+  }
+
+  # Reads deejay-cog's own Doppler project, like the deejay worker, and
+  # the same names: the library steps share the music flows' folders, run
+  # records and Spotify client.
+  ssm_parameters = {
+    DEEJAY_COG_API_KEY      = "DEEJAY_COG_API_KEY"
+    GOOGLE_CREDENTIALS_JSON = "GOOGLE_CREDENTIALS_JSON"
+  }
+  # Identify hands files with no usable tags to the fingerprint function.
+  send_queues = {
+    DEEJAY_FINGERPRINT_QUEUE_URL = {
+      url = module.deejay_fingerprint.queue_url
+      arn = module.deejay_fingerprint.queue_arn
+    }
+  }
+  ssm_optional_parameters = {
+    LIBRARY_BACKFILL_CHUNK_SIZE     = "LIBRARY_BACKFILL_CHUNK_SIZE"
+    LIBRARY_BACKFILL_SKIP_FILE_IDS  = "LIBRARY_BACKFILL_SKIP_FILE_IDS"
+    LIBRARY_IDENTIFY_CHUNK_SIZE     = "LIBRARY_IDENTIFY_CHUNK_SIZE"
+    LIBRARY_RECONCILE_CHUNK_SIZE    = "LIBRARY_RECONCILE_CHUNK_SIZE"
+    LIBRARY_ROOT_FOLDER_ID          = "LIBRARY_ROOT_FOLDER_ID"
+    LIBRARY_SCAN_LISTING_SECONDS    = "LIBRARY_SCAN_LISTING_SECONDS"
+    LIBRARY_SYNC_CHUNK_SIZE         = "LIBRARY_SYNC_CHUNK_SIZE"
+    LOGGING_LEVEL                   = "LOGGING_LEVEL"
+    MUSIC_TAGGING_STATE_FOLDER_ID   = "MUSIC_TAGGING_STATE_FOLDER_ID"
+    NEW_MUSIC_DESTINATION_FOLDER_ID = "NEW_MUSIC_DESTINATION_FOLDER_ID"
+    NEW_MUSIC_INPUT_FOLDER_ID       = "NEW_MUSIC_INPUT_FOLDER_ID"
+    NEW_MUSIC_MAX_FILES_PER_RUN     = "NEW_MUSIC_MAX_FILES_PER_RUN"
+    NEW_MUSIC_ORIGINALS_FOLDER_ID   = "NEW_MUSIC_ORIGINALS_FOLDER_ID"
+    NEW_MUSIC_REVIEW_FOLDER_ID      = "NEW_MUSIC_REVIEW_FOLDER_ID"
+    SENTRY_DSN_COGS                 = "SENTRY_DSN_COGS"
+    SPOTIFY_RADIO_PLAYLIST_ID       = "SPOTIFY_RADIO_PLAYLIST_ID"
+    SPOTIPY_CLIENT_ID               = "SPOTIPY_CLIENT_ID"
+    SPOTIPY_CLIENT_SECRET           = "SPOTIPY_CLIENT_SECRET"
+    SPOTIPY_REFRESH_TOKEN           = "SPOTIPY_REFRESH_TOKEN"
+  }
+}
+
 module "transcription" {
   source = "./modules/cog-worker"
 
@@ -456,7 +544,7 @@ module "watcher" {
   #
   # deejay-cog's library reconcile, on its own schedule rather than inside
   # the backfill's run, so a write run has the worker's whole timeout:
-  # hourly at minute 11, clear of the library job at :41 (the deejay queue
+  # hourly at minute 11, clear of the library job at :41 (the library queue
   # runs one message at a time). Its chunk and mode are deejay-cog's
   # settings.
   #

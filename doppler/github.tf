@@ -52,6 +52,12 @@ locals {
     AWS_FINGERPRINT_FUNCTION_NAME   = local.root.deejay_fingerprint.AWS_FUNCTION_NAME
   }, {})
 
+  # And a third, its library function, likewise.
+  library_deploy_variables = try({
+    AWS_LIBRARY_DEPLOY_ROLE_ARN = local.root.deejay_library.AWS_DEPLOY_ROLE_ARN
+    AWS_LIBRARY_FUNCTION_NAME   = local.root.deejay_library.AWS_FUNCTION_NAME
+  }, {})
+
   # The dev branch URL of a Pages site, where its workflows test it. Until
   # the root has applied its pages_subdomains output there is nothing to add.
   pages_dev_urls = try({
@@ -77,7 +83,7 @@ locals {
           if owner == repo
         }
         variables = {}
-        literals  = repo == "deejay-cog" ? merge(variables, local.fingerprint_deploy_variables) : variables
+        literals  = repo == "deejay-cog" ? merge(variables, local.fingerprint_deploy_variables, local.library_deploy_variables) : variables
       }
     },
     {

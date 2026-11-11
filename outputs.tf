@@ -37,6 +37,17 @@ output "deejay_fingerprint" {
   }
 }
 
+output "deejay_library" {
+  description = "deejay-cog's library function: the repository variables its deploy step reads, and where to look when a job dead-letters."
+  value = {
+    AWS_DEPLOY_ROLE_ARN = module.deejay_library.deploy_role_arn
+    AWS_FUNCTION_NAME   = module.deejay_library.function_name
+    queue_url           = module.deejay_library.queue_url
+    dlq_url             = module.deejay_library.dlq_url
+    alerts_topic_arn    = module.deejay_library.alerts_topic_arn
+  }
+}
+
 output "watcher" {
   description = "watcher-cog's repository variables, and whether its schedule is on."
   value = {
@@ -50,13 +61,14 @@ output "watcher" {
 
 output "doppler_consumers" {
   description = "Per worker's own Doppler project: each name its code reads → the vault's name for the value. doppler/ lays out each project's configs and syncs from this."
-  # deejay-cog's two functions share its project, so their names merge.
+  # deejay-cog's three functions share its project, so their names merge.
   value = {
     for project, references in {
       for m in [
         module.evaluator,
         module.deejay,
         module.deejay_fingerprint,
+        module.deejay_library,
         module.transcription,
         module.wiki_curator,
         module.task_manager,
@@ -83,10 +95,11 @@ locals {
   dispatch_claim_window_seconds = 6 * 3600
 
   cog_max_in_flight_seconds = {
-    evaluator      = module.evaluator.max_in_flight_seconds
-    deejay         = module.deejay.max_in_flight_seconds
-    transcription  = module.transcription.max_in_flight_seconds
-    "wiki-curator" = module.wiki_curator.max_in_flight_seconds
+    evaluator        = module.evaluator.max_in_flight_seconds
+    deejay           = module.deejay.max_in_flight_seconds
+    "deejay-library" = module.deejay_library.max_in_flight_seconds
+    transcription    = module.transcription.max_in_flight_seconds
+    "wiki-curator"   = module.wiki_curator.max_in_flight_seconds
   }
 }
 
