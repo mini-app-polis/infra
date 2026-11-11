@@ -446,15 +446,17 @@ module "watcher" {
     name => { watcher = name }
   }
 
-  # deejay-cog's nightly library run: watcher-cog's jobs.py asks the API for
-  # one library-backfill run, and deejay-cog runs its library steps (the
-  # chunk size and each step's mode are deejay-cog's settings). Minute 41
-  # keeps clear of drift at 09:17 and the sweep at :23.
+  # deejay-cog's library job: watcher-cog's jobs.py asks the API for one
+  # library-backfill run, and deejay-cog runs its library steps (the chunk
+  # sizes are deejay-cog's settings, each step's mode an API feature flag).
+  # Hourly: each step acts only on what changed and stays quiet when idle,
+  # so a change resolves within the hour. Minute 41 keeps clear of the
+  # reconcile at :11 and the sweep at :23.
   # The job name is watcher-cog's JOBS key; an unknown one fails loudly.
   #
   # deejay-cog's library reconcile, on its own schedule rather than inside
   # the backfill's run, so a write run has the worker's whole timeout:
-  # hourly at minute 11, clear of the nightly run at :41 (the deejay queue
+  # hourly at minute 11, clear of the library job at :41 (the deejay queue
   # runs one message at a time). Its chunk and mode are deejay-cog's
   # settings.
   #
@@ -465,7 +467,7 @@ module "watcher" {
   # the hour after its quiet day; a 500's Issue is never closed by it.
   cron_jobs = {
     "library-backfill" = {
-      schedule_expression = "cron(41 10 * * ? *)"
+      schedule_expression = "cron(41 * * * ? *)"
       event               = { job = "library-backfill" }
     }
     "library-reconcile" = {
