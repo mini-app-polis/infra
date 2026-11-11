@@ -78,9 +78,10 @@ module "deejay" {
   handler      = "deejay_cog.worker.lambda_handler"
   architecture = "x86_64"
 
-  # The nightly library run (scan, trash, identify, backfill chunk,
-  # reconcile, sync, duplicate report) takes about 2m 40s with a 50-file
-  # backfill chunk; 600s leaves room for larger chunks. A failing job holds
+  # The library jobs fill the run: the nightly library run (scan, trash,
+  # identify, backfill, sync, duplicate report) and the library reconcile,
+  # scheduled on its own, each work until the worker's deadline when they
+  # have a backlog, and carry on in the next run. A failing job holds
   # the FIFO queue for up to max_receive_count x (timeout + 60s), about 33
   # minutes here, so this stays below Lambda's 900s ceiling. 2048 MB: a
   # new-music run of 25 files ran out of memory at 1024 MB, in a container
