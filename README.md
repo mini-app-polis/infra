@@ -462,6 +462,18 @@ Zone WAF, Single Redirect, Cache Rules, Workers Routes, Bot Management.
 Registration, renewal and transfer stay in the dashboard and are in
 neither token.
 
+**The api-per-ip-burst block.** `api.kaianolevine.com` has one rate-limiting
+rule (`cloudflare_rules.tf`): 50 requests per 10 s per IP, blocked for 10 s.
+The Free plan's rule keys only on the IP and can't read headers, so it can't
+tell an authenticated cog from anyone else. A Lambda run that sends many
+requests at once (a library scan registering hundreds of files) passes it,
+and Cloudflare answers 429 with its "Access denied | api.kaianolevine.com
+used Cloudflare to restrict access" page. The API never sees those requests,
+so Railway logs nothing. The shared API client (common-python-utils) sends a
+request again after such a 429, on any path, because a request stopped at the
+edge can't have been done. The limit stays as it is: it bounds scanners, and
+callers wait it out.
+
 ## GitHub
 
 The organisation's and its repositories' settings are managed here
