@@ -59,6 +59,9 @@ locals {
       "ENVIRONMENT",
       "EVALUATION_QUEUE_PRODUCER_KEY_ID",
       "EVALUATION_QUEUE_PRODUCER_SECRET",
+      # FX Music's root: a file under it belongs to the fx library
+      # (deejay-cog ADR-0009), so its links are checked against fx entries.
+      "FX_LIBRARY_ROOT_FOLDER_ID",
       "GITHUB_ACTIONS_TOKEN",
       "GITHUB_DASHBOARD_TOKEN",
       "GITHUB_WEBHOOK_SECRET",
