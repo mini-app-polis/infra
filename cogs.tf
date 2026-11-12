@@ -122,12 +122,13 @@ module "deejay" {
     }
   }
 
-  # The new-music intake's and the library's folders, the identify,
+  # The new-music intake's and the library's folders (FX Music's too), the identify,
   # backfill, reconcile and sync chunks, the backfill's skip list, the
   # scan's listing budget, and where every music flow keeps its run records
   # (deejay-cog ADR-0007, ADR-0008). The steps' modes are the API's feature
   # flags, not settings (deejay-cog ADR-0008).
   ssm_optional_parameters = {
+    FX_LIBRARY_ROOT_FOLDER_ID       = "FX_LIBRARY_ROOT_FOLDER_ID"
     LIBRARY_BACKFILL_CHUNK_SIZE     = "LIBRARY_BACKFILL_CHUNK_SIZE"
     LIBRARY_BACKFILL_SKIP_FILE_IDS  = "LIBRARY_BACKFILL_SKIP_FILE_IDS"
     LIBRARY_IDENTIFY_CHUNK_SIZE     = "LIBRARY_IDENTIFY_CHUNK_SIZE"
@@ -289,6 +290,7 @@ module "deejay_library" {
     }
   }
   ssm_optional_parameters = {
+    FX_LIBRARY_ROOT_FOLDER_ID       = "FX_LIBRARY_ROOT_FOLDER_ID"
     LIBRARY_BACKFILL_CHUNK_SIZE     = "LIBRARY_BACKFILL_CHUNK_SIZE"
     LIBRARY_BACKFILL_SKIP_FILE_IDS  = "LIBRARY_BACKFILL_SKIP_FILE_IDS"
     LIBRARY_IDENTIFY_CHUNK_SIZE     = "LIBRARY_IDENTIFY_CHUNK_SIZE"
