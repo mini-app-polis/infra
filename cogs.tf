@@ -313,6 +313,94 @@ module "deejay_library" {
   }
 }
 
+# deejay-cog's fourth function: new-music intake, on a queue of its own. A
+# batch of several hundred files drains 25 files a run, each run queueing
+# the next, and on the deejay worker's FIFO queue that held process-new-files
+# and ingest-live-history for about two hours on 2026-11-13 (and tripped
+# deejay-queue-stalled). Here an intake run waits only on another intake run,
+# and this queue's stalled alarm is sized by an intake run, not by whatever
+# else shares the queue. Still one run at a time: intake moves files. Its
+# handler accepts new-music alone, so any other mode fails and is
+# dead-lettered rather than run. The API derives this queue's name from the
+# cog name deejay-intake (job_queue.queue_name).
+module "deejay_intake" {
+  source = "./modules/cog-worker"
+
+  # deejay-cog's repository is held by module.deejay.
+  create_repository    = false
+  github_repository_id = module.deejay.repository_id
+
+  name                     = "deejay-intake"
+  github_repo              = "mini-app-polis/deejay-cog"
+  github_oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
+  alert_email              = local.alert_email
+  api_base_url             = var.kaiano_api_base_url
+  non_settings_names       = local.non_settings_names
+
+  # The handler module is deejay-cog's to build. x86_64, like the deejay
+  # worker, for the same compiled wheels.
+  handler      = "deejay_cog.intake_worker.lambda_handler"
+  architecture = "x86_64"
+
+  # As the deejay worker, where intake ran until now: a run takes at most
+  # NEW_MUSIC_MAX_FILES_PER_RUN files and stops a margin before its deadline.
+  # 2048 MB: a new-music run of 25 files ran out of memory at 1024 MB.
+  timeout_seconds = 600
+  memory_mb       = 2048
+
+  # A run with a full batch stops a margin before the timeout, so the alarm
+  # sits past that stop, as the deejay worker's does.
+  duration_alarm_ratio = 0.97
+
+  # Serialised: two intake runs over one input folder race to move the same
+  # files. FIFO with one message group, so runs queue without being
+  # throttled; 3 receives is then three real failures.
+  fifo                 = true
+  reserved_concurrency = 1
+  max_receive_count    = 3
+
+  environment = {
+    SPOTIPY_REDIRECT_URI = "http://127.0.0.1:8888/callback"
+  }
+
+  # Reads deejay-cog's own Doppler project, like the deejay worker, and the
+  # same names.
+  ssm_parameters = {
+    DEEJAY_COG_API_KEY      = "DEEJAY_COG_API_KEY"
+    GOOGLE_CREDENTIALS_JSON = "GOOGLE_CREDENTIALS_JSON"
+  }
+  # Files with no usable tags go on to the fingerprint function
+  # (deejay-cog ADR-0007, decision 3).
+  send_queues = {
+    DEEJAY_FINGERPRINT_QUEUE_URL = {
+      url = module.deejay_fingerprint.queue_url
+      arn = module.deejay_fingerprint.queue_arn
+    }
+  }
+  ssm_optional_parameters = {
+    FX_LIBRARY_ROOT_FOLDER_ID       = "FX_LIBRARY_ROOT_FOLDER_ID"
+    LIBRARY_BACKFILL_CHUNK_SIZE     = "LIBRARY_BACKFILL_CHUNK_SIZE"
+    LIBRARY_BACKFILL_SKIP_FILE_IDS  = "LIBRARY_BACKFILL_SKIP_FILE_IDS"
+    LIBRARY_IDENTIFY_CHUNK_SIZE     = "LIBRARY_IDENTIFY_CHUNK_SIZE"
+    LIBRARY_RECONCILE_CHUNK_SIZE    = "LIBRARY_RECONCILE_CHUNK_SIZE"
+    LIBRARY_ROOT_FOLDER_ID          = "LIBRARY_ROOT_FOLDER_ID"
+    LIBRARY_SCAN_LISTING_SECONDS    = "LIBRARY_SCAN_LISTING_SECONDS"
+    LIBRARY_SYNC_CHUNK_SIZE         = "LIBRARY_SYNC_CHUNK_SIZE"
+    LOGGING_LEVEL                   = "LOGGING_LEVEL"
+    MUSIC_TAGGING_STATE_FOLDER_ID   = "MUSIC_TAGGING_STATE_FOLDER_ID"
+    NEW_MUSIC_DESTINATION_FOLDER_ID = "NEW_MUSIC_DESTINATION_FOLDER_ID"
+    NEW_MUSIC_INPUT_FOLDER_ID       = "NEW_MUSIC_INPUT_FOLDER_ID"
+    NEW_MUSIC_MAX_FILES_PER_RUN     = "NEW_MUSIC_MAX_FILES_PER_RUN"
+    NEW_MUSIC_ORIGINALS_FOLDER_ID   = "NEW_MUSIC_ORIGINALS_FOLDER_ID"
+    NEW_MUSIC_REVIEW_FOLDER_ID      = "NEW_MUSIC_REVIEW_FOLDER_ID"
+    SENTRY_DSN_COGS                 = "SENTRY_DSN_COGS"
+    SPOTIFY_RADIO_PLAYLIST_ID       = "SPOTIFY_RADIO_PLAYLIST_ID"
+    SPOTIPY_CLIENT_ID               = "SPOTIPY_CLIENT_ID"
+    SPOTIPY_CLIENT_SECRET           = "SPOTIPY_CLIENT_SECRET"
+    SPOTIPY_REFRESH_TOKEN           = "SPOTIPY_REFRESH_TOKEN"
+  }
+}
+
 module "transcription" {
   source = "./modules/cog-worker"
 
