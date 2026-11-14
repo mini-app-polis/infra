@@ -550,6 +550,14 @@ module "watcher" {
   # runs one message at a time). Its chunk and mode are deejay-cog's
   # settings.
   #
+  # deejay-cog's new-music intake, hourly at minute 53 (clear of :11, :23
+  # and :41): watcher-cog's jobs.py asks for one new-music run naming no
+  # file. The music-uploads watcher claims each input file once per version,
+  # so a file it already asked for (left past a run's cap, or moved back
+  # into the input folder) is never asked for again; this ask is not
+  # claimed, so such a file is taken in within the hour. A run that finds
+  # the folder empty sends nothing.
+  #
   # The API's quiet sweep of its own faults, hourly: watcher-cog's jobs.py
   # calls POST /v1/signals/api-faults/quiet-sweep, which closes each 502,
   # 503 or 504 Issue whose route has gone SIGNAL_FAULT_QUIET_HOURS (the
@@ -563,6 +571,10 @@ module "watcher" {
     "library-reconcile" = {
       schedule_expression = "cron(11 * * * ? *)"
       event               = { job = "library-reconcile" }
+    }
+    "new-music-sweep" = {
+      schedule_expression = "cron(53 * * * ? *)"
+      event               = { job = "new-music-sweep" }
     }
     "api-fault-quiet-sweep" = {
       schedule_expression = "cron(23 * * * ? *)"
