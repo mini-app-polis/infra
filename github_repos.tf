@@ -11,7 +11,7 @@
 # write where they need it, and narrowing a token is never a regression. wcs-wiki is private, so it
 # has no secret scanning or push protection (not available on a private
 # repository on the free plan), nor a ruleset. It and .github have no dev
-# branch. .github's second ruleset, "main", is below. infra's second
+# branch. infra's second
 # ruleset, "main" (pull requests and the plan check required), is held by
 # hand, not here.
 
@@ -49,64 +49,11 @@ module "github_repo" {
 # Each repository here and its protect-main ruleset were adopted with import
 # blocks (2026-11-03), removed once applied.
 
-# .github is the pipeline's source and has no dev, so a change reaches main
-# only by a pull request whose security checks pass (.github README,
-# "Changing the pipeline"). No review is required: the organisation has one
-# member, who cannot approve their own pull request; CODEOWNERS names the
-# owner of the workflow and action paths without gating on it. The release
-# commit and the moved major tag are pushed by GitHub Actions with the job's
-# token, which bypasses the rule. The checks are the gating jobs of .github's
-# own ci.yml, each from GitHub Actions.
-resource "github_repository_ruleset" "shared_workflows_main" {
-  name        = "main"
-  repository  = module.github_repo[".github"].name
-  target      = "branch"
-  enforcement = "active"
-
-  conditions {
-    ref_name {
-      include = ["~DEFAULT_BRANCH"]
-      exclude = []
-    }
-  }
-
-  bypass_actors {
-    # GitHub Actions.
-    actor_id    = 15368
-    actor_type  = "Integration"
-    bypass_mode = "always"
-  }
-
-  rules {
-    pull_request {
-      required_approving_review_count   = 0
-      dismiss_stale_reviews_on_push     = false
-      require_code_owner_review         = false
-      require_last_push_approval        = false
-      required_review_thread_resolution = false
-    }
-
-    required_status_checks {
-      strict_required_status_checks_policy = false
-
-      required_check {
-        context        = "security / secret scan"
-        integration_id = 15368
-      }
-      required_check {
-        context        = "security / dependency audit (python)"
-        integration_id = 15368
-      }
-      required_check {
-        context        = "test / secret scan"
-        integration_id = 15368
-      }
-      required_check {
-        context        = "test / dependency audit (node)"
-        integration_id = 15368
-      }
-    }
-  }
+# .github's protect-main ruleset was made by hand before this file held it;
+# it is adopted here rather than created a second time.
+import {
+  to = module.github_repo[".github"].github_repository_ruleset.protect_main[0]
+  id = ".github:25911289"
 }
 
 # A cog's repository is held by its own module block (cogs.tf); these
