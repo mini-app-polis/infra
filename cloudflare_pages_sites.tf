@@ -20,6 +20,12 @@
 # development Clerk instance, and their preview builds carry its pk_test_ key
 # (the *_DEV values).
 #
+# Each site may set `git_deployments = false`, for a repository whose deploys
+# have moved onto the canonical pipeline: Cloudflare then builds nothing on a
+# push, and the pipeline uploads the site it built (README, "Turning a Pages
+# project's Git builds off"). Left out, it is true, and Cloudflare builds and
+# deploys every push as before.
+#
 # PUBLIC_SITE_URL is a literal rather than a Doppler value: it is a site's
 # canonical domain, not a secret, and the same in every environment.
 
@@ -159,8 +165,8 @@ resource "cloudflare_pages_project" "site" {
       repo_id                        = each.value.repo_id
       production_branch              = "main"
       pr_comments_enabled            = true
-      production_deployments_enabled = true
-      preview_deployment_setting     = "all"
+      production_deployments_enabled = try(each.value.git_deployments, true)
+      preview_deployment_setting     = try(each.value.git_deployments, true) ? "all" : "none"
       preview_branch_includes        = ["*"]
       path_includes                  = ["*"]
     }
