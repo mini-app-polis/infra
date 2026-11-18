@@ -99,8 +99,9 @@ resource "github_workflow_repository_permissions" "this" {
 }
 
 # The fleet's protect-main ruleset: the default branch cannot be deleted
-# or force-pushed. A per-repository ruleset, because organisation rulesets
-# need GitHub Team.
+# or force-pushed. A per-repository ruleset, so it holds every repository,
+# on the canonical pipeline or not (the pipeline's own organisation
+# ruleset is modules/pipeline-ruleset).
 #
 # A repository can also require that changes arrive by pull request with
 # named checks passing. A ruleset applies to its bypass actors only as far

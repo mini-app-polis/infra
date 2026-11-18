@@ -511,7 +511,7 @@ App, synced to its Railway service by `doppler/railway.tf`:
 
 | App | Secrets | Where | Permissions |
 | --- | --- | --- | --- |
-| `mini-app-polis-infra-read` | `INFRA_READ_APP_CLIENT_ID`, `INFRA_READ_APP_PRIVATE_KEY` | repository secrets, plan jobs (pull request and nightly) | Repository: Administration **Read**, Metadata **Read**. Organization: Administration **Read** |
+| `mini-app-polis-infra-read` | `INFRA_READ_APP_CLIENT_ID`, `INFRA_READ_APP_PRIVATE_KEY` | repository secrets, plan jobs (pull request and nightly) | Repository: Administration **Read**, Contents **Read**, Metadata **Read**. Organization: Administration **Read** |
 | `mini-app-polis-infra-write` | `INFRA_WRITE_APP_CLIENT_ID`, `INFRA_WRITE_APP_PRIVATE_KEY` | `production` environment secrets, apply job | Repository: Administration **Write**, Contents **Write**, Metadata **Read**. Organization: Administration **Write** |
 | `mini-app-polis-signals` | `SIGNALS_APP_CLIENT_ID`, `SIGNALS_APP_PRIVATE_KEY` | api-kaianolevine-com's Railway service, production | Repository: Issues **Read and write**, Metadata **Read** |
 
@@ -526,8 +526,8 @@ Every repository in the organisation is declared through
 `modules/github-repo`, which holds the fleet's shape: public, main and
 dev, secret scanning and push protection, merge options, Actions and
 workflow-token permissions, and the `protect-main` ruleset (no deletion
-or force-push of the default branch; per repository, because
-organisation rulesets need GitHub Team). A repository can also require
+or force-push of the default branch, on every repository whether or not
+it is on the canonical pipeline). A repository can also require
 pull requests into `main` with named checks passing, and name the GitHub
 Apps that bypass that (`.github`: its release pushes as the promote App;
 GitHub does not accept GitHub Actions itself as a bypass actor). A cog's repository comes with
@@ -536,6 +536,22 @@ other repository is listed in `github_repos.tf`. Each lists only how it
 differs from that shape; they were imported as they were, so the first
 apply changed nothing. A read-only default workflow token is a deliberate
 difference, kept where a repository's workflows ask for write themselves.
+
+**The pipeline's organisation ruleset.** `pipeline-main`
+(`github_org_rulesets.tf`, `modules/pipeline-ruleset`) holds the default
+branch of every repository on the canonical pipeline: a change arrives only
+by pull request (no review), and only once `required.yml` from
+mini-app-polis/.github, at the current major's tag, has passed on it. That
+workflow runs the shared secret scan, dependency audit and static analysis
+in the target repository, which cannot remove or edit it. Which
+repositories and which tag are read from `pipeline.yaml` on .github's
+`main` (`on_pipeline`, `current_major`), so nothing here restates them:
+with none on the pipeline there is no ruleset, and a repository added
+there is held from the next apply. A repository declared without
+`protect-main` (wcs-wiki) is never held. The promote App is the one
+bypass, for a release's commit; GitHub runs ruleset workflows only on
+pull requests, so `dev`, which takes direct pushes, is not held. Reading
+`pipeline.yaml` is why the read App has Contents **Read**.
 
 **Renaming a repository.** Change its name in its block (a cog's
 `github_repo`, or its key in `github_repos.tf`) and add a `moved` block if
