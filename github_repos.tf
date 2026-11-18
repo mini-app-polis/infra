@@ -20,11 +20,11 @@ locals {
   promote_app_id = 5111724
 
   github_repos = {
-    # The pipeline's own repository: main takes changes by pull request
-    # with its CI passing; the release pushes its version commit as the
-    # promote App, the one bypass.
+    # The pipeline's own repository: changes land on dev like the rest of
+    # the fleet, and main takes them by pull request with its CI passing;
+    # the release pushes its version commit as the promote App, the one
+    # bypass.
     ".github" = {
-      dev_branch                 = false
       main_requires_pull_request = true
       main_required_checks = [
         "security / secret scan",
