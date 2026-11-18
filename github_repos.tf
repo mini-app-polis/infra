@@ -31,9 +31,9 @@ locals {
         "security / dependency audit (python)",
         "security / static analysis",
         "security / sbom",
-        "test / secret scan",
-        "test / dependency audit (node)",
-        "test / static analysis",
+        # self-test.yml's gate: workflow static analysis, the release
+        # tooling's audit and every profile's fixture.
+        "test / gate",
       ]
       main_bypass_app_ids = [local.promote_app_id]
     }
