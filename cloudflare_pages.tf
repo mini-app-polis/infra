@@ -8,7 +8,11 @@
 # are in cloudflare_pages_sites.tf.
 #
 # Deployments themselves come from the Git integration; nothing here
-# triggers one.
+# triggers one. A project whose repository has moved onto the canonical
+# pipeline sets `git_deployments = false` in its entry: Cloudflare then builds
+# nothing on a push, and the pipeline's deploy stage uploads the site it
+# built (README, "Turning a Pages project's Git builds off"). Left out, it is
+# true: Cloudflare builds and deploys every push, as before.
 
 locals {
   cloudflare_pages_projects = {
@@ -81,8 +85,8 @@ resource "cloudflare_pages_project" "this" {
       repo_id                        = each.value.repo_id
       production_branch              = "main"
       pr_comments_enabled            = true
-      production_deployments_enabled = true
-      preview_deployment_setting     = "all"
+      production_deployments_enabled = try(each.value.git_deployments, true)
+      preview_deployment_setting     = try(each.value.git_deployments, true) ? "all" : "none"
       preview_branch_includes        = ["*"]
       path_includes                  = ["*"]
     }

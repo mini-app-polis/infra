@@ -462,6 +462,31 @@ Zone WAF, Single Redirect, Cache Rules, Workers Routes, Bot Management.
 Registration, renewal and transfer stay in the dashboard and are in
 neither token.
 
+**Turning a Pages project's Git builds off.** Every Pages project here is
+connected to its GitHub repository, and Cloudflare builds and deploys each
+push: `main` to production, any other branch as a preview (`dev` serves at
+`dev.<project>.pages.dev`, where the `dev.` domains point). A site whose
+repository has moved onto the canonical pipeline (mini-app-polis/.github,
+"Deploy stage") is deployed by the pipeline instead, which uploads the site
+it built with `wrangler pages deploy`. In that same change, its entry in
+`cloudflare_pages_sites.tf` (or `cloudflare_pages.tf`) gets:
+
+```hcl
+git_deployments = false
+```
+
+The plan shows the project's `production_deployments_enabled` going to
+`false` and `preview_deployment_setting` to `"none"`, and nothing else. The
+Git connection, the build settings, the domains and the variables stay, so
+setting it back to `true` (or removing the line) returns the project to
+building on push. Left out, it is `true`: nothing changes for a project until
+its repository opts in. Order: merge this before the repository's pipeline
+caller reaches `main`, or that release is deployed twice, once by each.
+
+The pipeline's deploy needs its own token, kept in the site's repository as
+`CLOUDFLARE_PAGES_API_TOKEN`: Account → Cloudflare Pages → Edit, and
+nothing else. It is not one of the two tokens above.
+
 **The api-per-ip-burst block.** `api.kaianolevine.com` has one rate-limiting
 rule (`cloudflare_rules.tf`): 50 requests per 10 s per IP, blocked for 10 s.
 The Free plan's rule keys only on the IP and can't read headers, so it can't
