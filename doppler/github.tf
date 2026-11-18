@@ -212,9 +212,11 @@ locals {
       AGENT_APP_CLIENT_ID     = "prd.AGENT_APP_CLIENT_ID"
       AGENT_APP_PRIVATE_KEY   = "prd.AGENT_APP_PRIVATE_KEY"
       CI_VALIDATOR_API_KEY    = "prd.CI_VALIDATOR_API_KEY"
-      PROMOTE_APP_CLIENT_ID   = "prd.PROMOTE_APP_CLIENT_ID"
-      PROMOTE_APP_PRIVATE_KEY = "prd.PROMOTE_APP_PRIVATE_KEY"
-      TASK_AGENT_API_KEY      = "prd.TASK_AGENT_API_KEY"
+      # The pipeline's verify stage posts a failed verification here.
+      DISCORD_WEBHOOK_URL_ERRORS = "prd.DISCORD_WEBHOOK_URL_ERRORS"
+      PROMOTE_APP_CLIENT_ID      = "prd.PROMOTE_APP_CLIENT_ID"
+      PROMOTE_APP_PRIVATE_KEY    = "prd.PROMOTE_APP_PRIVATE_KEY"
+      TASK_AGENT_API_KEY         = "prd.TASK_AGENT_API_KEY"
     }
     variables = { AWS_REGION = "prd.AWS_REGION" }
   }
