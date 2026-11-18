@@ -99,8 +99,14 @@ resource "github_workflow_repository_permissions" "this" {
 }
 
 # The fleet's protect-main ruleset: the default branch cannot be deleted
-# or force-pushed, and nobody bypasses that. A per-repository ruleset,
-# because organisation rulesets need GitHub Team.
+# or force-pushed. A per-repository ruleset, because organisation rulesets
+# need GitHub Team.
+#
+# A repository can also require that changes arrive by pull request with
+# named checks passing. A ruleset applies to its bypass actors only as far
+# as the bypass goes, so the Apps named in main_bypass_app_ids (a release
+# pushing its version commit) skip the pull-request and check rules; GitHub
+# does not accept GitHub Actions itself as a bypass actor.
 resource "github_repository_ruleset" "protect_main" {
   count = var.protect_main ? 1 : 0
 
@@ -116,8 +122,37 @@ resource "github_repository_ruleset" "protect_main" {
     }
   }
 
+  dynamic "bypass_actors" {
+    for_each = var.main_bypass_app_ids
+    content {
+      actor_id    = bypass_actors.value
+      actor_type  = "Integration"
+      bypass_mode = "always"
+    }
+  }
+
   rules {
     deletion         = true
     non_fast_forward = true
+
+    dynamic "pull_request" {
+      for_each = var.main_requires_pull_request ? [1] : []
+      content {
+        required_approving_review_count = 0
+      }
+    }
+
+    dynamic "required_status_checks" {
+      for_each = length(var.main_required_checks) > 0 ? [1] : []
+      content {
+        strict_required_status_checks_policy = false
+        dynamic "required_check" {
+          for_each = var.main_required_checks
+          content {
+            context = required_check.value
+          }
+        }
+      }
+    }
   }
 }

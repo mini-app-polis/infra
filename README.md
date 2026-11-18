@@ -501,8 +501,11 @@ Every repository in the organisation is declared through
 `modules/github-repo`, which holds the fleet's shape: public, main and
 dev, secret scanning and push protection, merge options, Actions and
 workflow-token permissions, and the `protect-main` ruleset (no deletion
-or force-push of the default branch, no bypass; per repository, because
-organisation rulesets need GitHub Team). A cog's repository comes with
+or force-push of the default branch; per repository, because
+organisation rulesets need GitHub Team). A repository can also require
+pull requests into `main` with named checks passing, and name the GitHub
+Apps that bypass that (`.github`: its release pushes as the promote App;
+GitHub does not accept GitHub Actions itself as a bypass actor). A cog's repository comes with
 its module block in `cogs.tf`, so adding the block creates it; every
 other repository is listed in `github_repos.tf`. Each lists only how it
 differs from that shape; they were imported as they were, so the first

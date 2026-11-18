@@ -16,8 +16,27 @@
 # hand, not here.
 
 locals {
+  # The promote GitHub App (mini-app-polis-promote), by its numeric App ID.
+  promote_app_id = 5111724
+
   github_repos = {
-    ".github"                = { dev_branch = false }
+    # The pipeline's own repository: main takes changes by pull request
+    # with its CI passing; the release pushes its version commit as the
+    # promote App, the one bypass.
+    ".github" = {
+      dev_branch                 = false
+      main_requires_pull_request = true
+      main_required_checks = [
+        "security / secret scan",
+        "security / dependency audit (python)",
+        "security / static analysis",
+        "security / sbom",
+        "test / secret scan",
+        "test / dependency audit (node)",
+        "test / static analysis",
+      ]
+      main_bypass_app_ids = [local.promote_app_id]
+    }
     "api-deejaytools"        = {}
     "api-kaianolevine-com"   = { default_workflow_permissions = "read" }
     "common-python-utils"    = {}
@@ -44,17 +63,13 @@ module "github_repo" {
   has_wiki                     = lookup(each.value, "has_wiki", false)
   default_workflow_permissions = lookup(each.value, "default_workflow_permissions", "write")
   protect_main                 = lookup(each.value, "protect_main", true)
+  main_requires_pull_request   = lookup(each.value, "main_requires_pull_request", false)
+  main_required_checks         = lookup(each.value, "main_required_checks", [])
+  main_bypass_app_ids          = lookup(each.value, "main_bypass_app_ids", [])
 }
 
 # Each repository here and its protect-main ruleset were adopted with import
 # blocks (2026-11-03), removed once applied.
-
-# .github's protect-main ruleset was made by hand before this file held it;
-# it is adopted here rather than created a second time.
-import {
-  to = module.github_repo[".github"].github_repository_ruleset.protect_main[0]
-  id = ".github:25911289"
-}
 
 # A cog's repository is held by its own module block (cogs.tf); these
 # were declared here first.
