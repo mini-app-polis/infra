@@ -42,3 +42,21 @@ variable "protect_main" {
   type        = bool
   default     = true
 }
+
+variable "main_requires_pull_request" {
+  description = "Whether a change reaches the default branch only through a pull request (no review required)."
+  type        = bool
+  default     = false
+}
+
+variable "main_required_checks" {
+  description = "Check names a pull request into the default branch must pass, as GitHub Actions reports them (e.g. \"security / secret scan\")."
+  type        = list(string)
+  default     = []
+}
+
+variable "main_bypass_app_ids" {
+  description = "Numeric IDs of GitHub Apps that may push to the default branch past the pull-request and check rules, such as the App a release pushes with."
+  type        = list(number)
+  default     = []
+}
