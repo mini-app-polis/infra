@@ -156,4 +156,13 @@ resource "github_repository_ruleset" "protect_main" {
       }
     }
   }
+
+  # GitHub returns a ruleset's bypass actors only to a caller that can edit
+  # it, and the infra-read App that plans cannot, so it reads them as none
+  # and every plan would add them back. They are set when the ruleset is
+  # created here and not held afterwards: a change to main_bypass_app_ids
+  # on an existing ruleset needs a -replace of it to take effect.
+  lifecycle {
+    ignore_changes = [bypass_actors]
+  }
 }
